@@ -123,6 +123,26 @@ update_proxy_status() {
     echo -e "\033[0;34m---------------------------------------------------------\033[0m"
     echo -e "\E[44;1;37m           RUSTY PROXY DESINSTALADO COM SUCESSO.          \E[0m"
     echo -e "\033[0;34m---------------------------------------------------------\033[0m"
+    sleep 4
+    clear
+}
+
+#FUNÇÃO PARA REINICIAR TODAS AS PORTAS PROXYS ABERTAS
+restart_all_proxies() {
+    if [ ! -s "$PORTS_FILE" ]; then
+        echo "NENHUMA PORTA ENCONTRADA PARA REINICIAR."
+        return
+    fi
+
+    echo "REINICIANDO TODAS AS PORTAS..."
+    while read -r line; do
+        port=$(echo "$line" | awk '{print $1}')
+        status=$(echo "$line" | cut -d' ' -f2-)
+        del_proxy_port "$port"
+        add_proxy_port "$port" "$status"
+    done < "$PORTS_FILE"
+
+    echo "TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
     sleep 3
     clear
 }
@@ -131,8 +151,8 @@ update_proxy_status() {
 show_menu() {
     clear
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[40;1;37m                    ⚒ RUSTY PROXY MANAGER ⚒                   \E[0m"
-    echo -e "\033[40;1;37m                           \033[1;32mVERSÃO: 02                         "
+    echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                    \E[0m"
+    echo -e "\033[40;1;37m                        \033[1;32mVERSÃO: 02                            "
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
 
    #VERIFICADOR DE PORTAS ATIVAS
@@ -149,8 +169,9 @@ show_menu() {
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mFECHAR PORTAS \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
+[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PORTAS \033[1;31m
+[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
+[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo
@@ -179,7 +200,14 @@ show_menu() {
             read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
 			clear
             ;;
-        3)
+			
+		3)
+            clear
+            restart_all_proxies
+            read -p "✅ TODAS AS PORTAS FORAM REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            ;;	
+			
+        4)
             clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
@@ -191,7 +219,7 @@ show_menu() {
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 			
-	4)
+	5)
           clear
             uninstall_rustyproxy
             read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
