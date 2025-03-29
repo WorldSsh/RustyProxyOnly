@@ -170,12 +170,12 @@ show_menu() {
     case $option in
         1)
             clear
-            read -p "DIGITE A PORTA:RUSTYPROXY " port
+            read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            read -p "DIGITE O NOME DO STATUS: RUSTYPROXY " status
+            read -p "DIGITE O NOME DO STATUS:RUSTY PROXY " status
             add_proxy_port $port "$status"
             read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
