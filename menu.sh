@@ -137,9 +137,7 @@ show_menu() {
             read -p "DIGITE O STATUS DE CONEXÃO (DEIXE VAZIO PARA PADRÃO): " status
             add_proxy_port $port "$status"
 			clear
-            read -p "✅ PORTA ATIVADA COM SUCESSO, AGUARDE VOLTANDO AO MENU PRINCIPAL..."
-			sleep 1
-			dummy			
+            read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
             ;;
         2)
 		    clear
@@ -147,14 +145,11 @@ show_menu() {
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
-		    done
+		done
             del_proxy_port $port
-	        clear
-            read -p "✅ PORTA DESATIVADA, AGUARDE VOLTANDO AO MENU PRINCIPAL..."
-	        sleep 2
-			echo -e "RETORNANDO...
-			sleep 2
-			clear
+	    clear
+            read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
+	    clear
             ;;
 		3)
           clear
