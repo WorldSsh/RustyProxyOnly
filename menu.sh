@@ -3,25 +3,13 @@
 
 PORTS_FILE="/opt/rustyproxy/ports"
 
-# Função para verificar se uma porta está em uso
-is_port_in_use() {
-    local port=$1
-    if netstat -tuln 2>/dev/null | grep -q ":[0-9]*$port\b"; then
-        return 0
-    elif ss -tuln 2>/dev/null | grep -q ":[0-9]*$port\b"; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Função para abrir uma porta de proxy
+#FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
 add_proxy_port() {
     local port=$1
     local status=${2:-"@RustyProxy"}
 
     if is_port_in_use $port; then
-        echo "A porta $port já está em uso."
+        echo "A PORTA $port JÁ ESTA EM USO."
         return
     fi
 
@@ -46,12 +34,12 @@ WantedBy=multi-user.target"
     sudo systemctl start "proxy${port}.service"
 
     # Salvar a porta no arquivo
-    echo "$port $status" >> "$PORTS_FILE"
+    echo "$port \033[1;31m$status\033[0m" >> "$PORTS_FILE"
     echo "Porta $port ABERTA COM SUCESSO."
 	clear
 }
 
-# Função para verificar se uma porta está em uso
+#FUNÇÃO VERIFICAR PORTAS EM USO
 is_port_in_use() {
     local port=$1
 
@@ -67,7 +55,7 @@ is_port_in_use() {
     fi
 }
 
-# Função para fechar uma porta de proxy
+#FUNÇÃO PARA FECHAR PORTAS DE UM PROXY
 del_proxy_port() {
     local port=$1
 
@@ -85,7 +73,7 @@ del_proxy_port() {
     clear
 }
 
-# Função para alterar o status de uma porta
+#FUNÇÃO PARA ALTERAR UM STATUS DE UM PROXY
 update_proxy_status() {
     local port=$1
     local new_status=$2
@@ -115,20 +103,20 @@ update_proxy_status() {
     clear
 }
 
-# Função para desinstalar o RustyProxy
+#FUNÇÃO PARA DESINSTALAR RUSTY PROXY
     uninstall_rustyproxy() {
     echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
     sleep 4
     clear
 
-# Parar e remover todos os serviços
+#REMOVER TODOS OS SERVIÇOS
     if [ -s "$PORTS_FILE" ]; then
         while read -r port; do
             del_proxy_port $port
         done < "$PORTS_FILE"
     fi
 	
-	# Remover binário, arquivos e diretórios
+	#REMOVER BINÁRIOS, ARQUIVOS E DIRETÓRIOS
     sudo rm -rf /opt/rustyproxy
     sudo rm -f "$PORTS_FILE"
 
@@ -139,12 +127,12 @@ update_proxy_status() {
     clear
 }
 
-# Função para exibir o menu formatado
+#EXIBIR MENU
 show_menu() {
     clear
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                   \E[0m"
-    echo -e "\033[40;1;37m                         \033[1;32mVERSÃO: 02                      "
+    echo -e "\033[40;1;37m                        \033[1;32mVERSÃO: 02                             "
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
 
    # Verifica se há portas ativas
