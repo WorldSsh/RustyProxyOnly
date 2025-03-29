@@ -162,7 +162,7 @@ show_menu() {
         while read -r line; do
             port=$(echo "$line" | awk '{print $1}')
             status=$(echo "$line" | cut -d' ' -f2-)
-            printf " PORTA: %-5s ON" "$port"
+            printf " PORTA: %-5s ON \033[1;31m%s\033[0m\n" "$port"
         done < "$PORTS_FILE"
     fi
 
