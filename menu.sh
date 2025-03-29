@@ -33,7 +33,7 @@ WantedBy=multi-user.target"
     sudo systemctl enable "proxy${port}.service"
     sudo systemctl start "proxy${port}.service"
 
-    # Salvar a porta no arquivo
+    #SALVAR PORTAS NO ARQUIVO
     echo "$port \033[1;31m$status\033[0m" >> "$PORTS_FILE"
     echo "Porta $port ABERTA COM SUCESSO."
 	clear
@@ -43,7 +43,7 @@ WantedBy=multi-user.target"
 is_port_in_use() {
     local port=$1
 
-    # Verifica conexões ESTABELECIDAS ou LISTEN
+    #VERIFICA CONEXÕES ESTABELECIDAS OU LISTEN
     if netstat -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
         return 0
     elif ss -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
@@ -64,10 +64,10 @@ del_proxy_port() {
     sudo rm -f "/etc/systemd/system/proxy${port}.service"
     sudo systemctl daemon-reload
 
-    # Matar qualquer processo que ainda esteja usando a porta
+    #MATAR QUALQUER PROCESSO QUE AINDA ESTEJA USANDO A PORTA
     fuser -k "$port"/tcp 2>/dev/null
 
-    # Remover a porta do arquivo de controle
+    #REMOVER A PORTA DO ARQUIVO DE CONTROLE
     sed -i "/^$port /d" "$PORTS_FILE"
     echo "Porta $port FECHADA COM SUCESSO."
     clear
@@ -95,7 +95,7 @@ update_proxy_status() {
     sudo systemctl daemon-reload
     sudo systemctl restart "proxy${port}.service"
 
-    # Atualizar o arquivo de portas
+    #ATUALIZAR O ARQUIVO DE PORTAS
     sed -i "s/^$port .*/$port $new_status/" "$PORTS_FILE"
 
     echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
@@ -131,13 +131,13 @@ update_proxy_status() {
 show_menu() {
     clear
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                    \E[0m"
-    echo -e "\033[40;1;37m                        \033[1;32mVERSÃO: 02                            "
+    echo -e "\033[40;1;37m                    ⚒ RUSTY PROXY MANAGER ⚒                   \E[0m"
+    echo -e "\033[40;1;37m                           \033[1;32mVERSÃO: 02                         "
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
 
-   # Verifica se há portas ativas
+   #VERIFICADOR DE PORTAS ATIVAS
     if [ ! -s "$PORTS_FILE" ]; then
-        printf " PORTA ATIVA(s): %-34s\n" "NENHUMA"
+        printf "NENHUMA PORTA %-34s\n" "ON"
     else
         while read -r line; do
             port=$(echo "$line" | awk '{print $1}')
@@ -209,12 +209,12 @@ show_menu() {
     esac
 }
 
-# Verificar se o arquivo de portas existe, caso contrário, criar
+#VERIFICAR SE O ARQUIVO DE PORTAS EXISTE, CASO CONTRÁRIO, CRIAR
 if [ ! -f "$PORTS_FILE" ]; then
     sudo touch "$PORTS_FILE"
 fi
 
-# Loop do menu
+#LOOP DO MENU
 while true; do
     show_menu
 done
