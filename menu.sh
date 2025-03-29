@@ -82,8 +82,7 @@ del_proxy_port() {
     # Remover a porta do arquivo de controle
     sed -i "/^$port /d" "$PORTS_FILE"
     echo "Porta $port FECHADA COM SUCESSO."
-	clear
-
+    clear
 }
 
 # Função para alterar o status de uma porta
@@ -93,12 +92,12 @@ update_proxy_status() {
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
     if ! is_port_in_use $port; then
-        echo "A porta $port não está ativa."
+        echo "A PORTA $port NÃO ESTÁ ATIVA."
         return
     fi
 
     if [ ! -f "$service_file_path" ]; then
-        echo "Arquivo de serviço para a porta $port não encontrado."
+        echo "ARQUIVO DE SERVIÇO PARA $port NÃO ENCONTRADO."
         return
     fi
 
@@ -111,7 +110,9 @@ update_proxy_status() {
     # Atualizar o arquivo de portas
     sed -i "s/^$port .*/$port $new_status/" "$PORTS_FILE"
 
-    echo "Status da porta $port atualizado para '$new_status'."
+    echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
+    sleep 3
+    clear
 }
 
 # Função para desinstalar o RustyProxy
@@ -201,7 +202,7 @@ show_menu() {
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 			
-			4)
+	4)
           clear
             uninstall_rustyproxy
             read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
