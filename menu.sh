@@ -151,7 +151,7 @@ restart_all_proxies() {
 show_menu() {
     clear
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                    \E[0m"
+    echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                     \E[0m"
     echo -e "\033[40;1;37m                        \033[1;32mVERSÃO: 02                            "
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
 
@@ -204,7 +204,7 @@ show_menu() {
 		3)
             clear
             restart_all_proxies
-            read -p "✅ TODAS AS PORTAS FORAM REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ TPORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
         4)
