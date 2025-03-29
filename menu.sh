@@ -106,7 +106,7 @@ update_proxy_status() {
 #FUNÇÃO PARA DESINSTALAR RUSTY PROXY
     uninstall_rustyproxy() {
     echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
-    sleep 4
+    sleep 3
     clear
 
 #REMOVER TODOS OS SERVIÇOS
@@ -204,7 +204,7 @@ show_menu() {
 		3)
             clear
             restart_all_proxies
-            read -p "✅ TPORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ PORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
         4)
