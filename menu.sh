@@ -94,7 +94,7 @@ update_proxy_status() {
 
     sudo systemctl daemon-reload
     sudo systemctl restart "proxy${port}.service"
-    echo "Status da porta $port atualizado para '$new_status'."
+    echo "STATUS DA PORTA $port ATUALIZADO PARA: '$new_status'."
 }
 
 # Função para desinstalar o RustyProxy
