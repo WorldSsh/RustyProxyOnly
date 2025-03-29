@@ -73,19 +73,19 @@ del_proxy_port() {
     clear
 }
 
-# Função para alterar o status de uma porta
+# Função para alterar o status de uma porta no RustyProxy
 update_proxy_status() {
     local port=$1
     local new_status=$2
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
     if ! is_port_in_use $port; then
-        echo "A porta $port não está ativa."
+        echo "A PORTA $port NÃO ESTÁ ATIVA."
         return
     fi
 
     if [ ! -f "$service_file_path" ]; then
-        echo "Arquivo de serviço para a porta $port não encontrado."
+        echo "ARQUIVO DE SERVIÇO PARA A PORTA $port NÃO ENCONTRADO."
         return
     fi
 
