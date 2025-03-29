@@ -48,6 +48,23 @@ WantedBy=multi-user.target"
     # Salvar a porta no arquivo
     echo "$port $status" >> "$PORTS_FILE"
     echo "Porta $port ABERTA COM SUCESSO."
+	clear
+}
+
+# Função para verificar se uma porta está em uso
+is_port_in_use() {
+    local port=$1
+
+    # Verifica conexões ESTABELECIDAS ou LISTEN
+    if netstat -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
+        return 0
+    elif ss -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
+        return 0
+    elif lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Função para fechar uma porta de proxy
@@ -59,9 +76,13 @@ del_proxy_port() {
     sudo rm -f "/etc/systemd/system/proxy${port}.service"
     sudo systemctl daemon-reload
 
-    # Remover a porta do arquivo
+    # Matar qualquer processo que ainda esteja usando a porta
+    fuser -k "$port"/tcp 2>/dev/null
+
+    # Remover a porta do arquivo de controle
     sed -i "/^$port /d" "$PORTS_FILE"
     echo "Porta $port FECHADA COM SUCESSO."
+    
 }
 
 # Função para alterar o status de uma porta
@@ -130,7 +151,7 @@ show_menu() {
         while read -r line; do
             port=$(echo "$line" | awk '{print $1}')
             status=$(echo "$line" | cut -d' ' -f2-)
-            printf " PORTA: %-5s STATUS: \033[1;31m%s\033[0m\n" "$port" "$status"
+            printf " PORTA: %-5s \033[1;31m%s\033[0m\n" "$port"
         done < "$PORTS_FILE"
     fi
 
@@ -165,6 +186,7 @@ show_menu() {
             done
             del_proxy_port $port
             read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+			clear
             ;;
         3)
             clear
