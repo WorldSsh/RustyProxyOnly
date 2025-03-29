@@ -92,6 +92,30 @@ update_proxy_status() {
     echo "Status da porta $port atualizado para '$new_status'."
 }
 
+# Função para desinstalar o RustyProxy
+    uninstall_rustyproxy() {
+    echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
+    sleep 4
+    clear
+
+# Parar e remover todos os serviços
+    if [ -s "$PORTS_FILE" ]; then
+        while read -r port; do
+            del_proxy_port $port
+        done < "$PORTS_FILE"
+    fi
+	
+	# Remover binário, arquivos e diretórios
+    sudo rm -rf /opt/rustyproxy
+    sudo rm -f "$PORTS_FILE"
+
+    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
+    echo -e "\E[44;1;37m           RUSTY PROXY DESINSTALADO COM SUCESSO.          \E[0m"
+    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
+    sleep 4
+    clear
+}
+
 # Função para exibir o menu formatado
 show_menu() {
     clear
@@ -114,6 +138,7 @@ show_menu() {
     echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mFECHAR PORTAS \033[1;31m
 [\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS DA PORTA \033[1;31m
+[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS DA PORTA \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo
@@ -127,7 +152,7 @@ show_menu() {
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            read -p "DIGITE O STATUS DE CONEXÃO (DEIXE VAZIO PARA PADRÃO): " status
+            read -p "DIGITE O NOME DO STATUS: " status
             add_proxy_port $port "$status"
             read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
@@ -152,6 +177,15 @@ show_menu() {
             update_proxy_status $port "$new_status"
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
+			
+			4)
+          clear
+            uninstall_rustyproxy
+            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
+	    clear
+            exit 0
+            ;;	
+			
         0)
             exit 0
             ;;
