@@ -144,9 +144,10 @@ show_menu() {
     clear
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo -e "\E[44;1;37m                   ⚒ RUSTY PROXY MANAGER ⚒                   \E[0m"
+    echo -e "\033[44;1;37m                        \033[1;32mVERSÃO: 02                                "
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
 
-    # Verifica se há portas ativas
+   # Verifica se há portas ativas
     if [ ! -s "$PORTS_FILE" ]; then
         printf " PORTA ATIVA(s): %-34s\n" "NENHUMA"
     else
