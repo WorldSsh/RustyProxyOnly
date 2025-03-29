@@ -137,7 +137,7 @@ show_menu() {
             read -p "DIGITE O STATUS DE CONEXÃO (DEIXE VAZIO PARA PADRÃO): " status
             add_proxy_port $port "$status"
 			clear
-            read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
+            read -p "✅ PORTA ATIVADA COM SUCESSO, PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
             ;;
         2)
 		    clear
@@ -148,7 +148,7 @@ show_menu() {
 		done
             del_proxy_port $port
 	    clear
-            read -p "◉ PORTA DESATIVADA. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
+            read -p "✅ PORTA DESATIVADA, PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
 	    clear
             ;;
 		3)
