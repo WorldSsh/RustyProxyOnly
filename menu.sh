@@ -142,7 +142,7 @@ restart_all_proxies() {
         add_proxy_port "$port" "$status"
     done < "$PORTS_FILE"
 
-    echo "TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
+    echo "✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
     sleep 3
     clear
 }
