@@ -175,7 +175,7 @@ show_menu() {
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            read -p "DIGITE O NOME DO STATUS:RUSTY PROXY " status
+            read -p "DIGITE O NOME DO STATUS: " status
             add_proxy_port $port "$status"
             read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
