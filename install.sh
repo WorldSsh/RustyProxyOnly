@@ -1,5 +1,5 @@
 #!/bin/bash
-# Instalação Rusty Proxy compativel ubuntu e debian todas as versçoes
+# Instalação Rusty Proxy compativel ubuntu e debian todas as versoes
 
 TOTAL_STEPS=9
 CURRENT_STEP=0
