@@ -32,23 +32,28 @@ async fn start_proxy(listener: TcpListener) {
 }
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
+    let status = get_status();
+    client_stream
+        .write_all(format!("HTTP/1.1 101 {}
+
+", status).as_bytes())
+        .await?;
+
     let mut buffer = [0; 1024];
-    let bytes_read = client_stream.read(&mut buffer).await?;
-    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
-    
-    if request.starts_with("GET") || request.starts_with("POST") {
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-        client_stream.write_all(response.as_bytes()).await?;
-        return Ok(());
-    } else if request.starts_with("CONNECT") {
-        let response = "HTTP/1.1 200 Connection Established\r\n\r\n";
-        client_stream.write_all(response.as_bytes()).await?;
-    }
-    
-    let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
+    client_stream.read(&mut buffer).await?;
+    client_stream
+        .write_all(format!("HTTP/1.1 200 {}
+
+", status).as_bytes())
+        .await?;
+
+    let addr_proxy = match timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
-        Err(_) => "0.0.0.0:22",
+        Err(_) => {
+            eprintln!("Timeout ao identificar endereço do proxy");
+            return Ok(());
+        }
     };
 
     let server_stream = match TcpStream::connect(addr_proxy).await {
@@ -84,14 +89,21 @@ async fn transfer_data(
         let bytes_read = {
             let mut reader = read_stream.lock().await;
             match reader.read(&mut buffer).await {
-                Ok(0) => break, 
+                Ok(0) => {
+                    println!("Conexão encerrada pelo cliente");
+                    break;
+                }
                 Ok(n) => n,
-                Err(_) => break,
+                Err(e) => {
+                    eprintln!("Erro ao ler dados: {}", e);
+                    break;
+                }
             }
         };
 
         let mut writer = write_stream.lock().await;
         if writer.write_all(&buffer[..bytes_read]).await.is_err() {
+            eprintln!("Erro ao escrever dados para o destino");
             break;
         }
     }
