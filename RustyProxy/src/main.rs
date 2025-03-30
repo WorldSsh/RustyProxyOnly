@@ -32,17 +32,19 @@ async fn start_proxy(listener: TcpListener) {
 }
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
-    let status = get_status();
-    client_stream
-        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
-        .await?;
-
     let mut buffer = [0; 1024];
-    client_stream.read(&mut buffer).await?;
-    client_stream
-        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
-        .await?;
-
+    let bytes_read = client_stream.read(&mut buffer).await?;
+    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+    
+    if request.starts_with("GET") || request.starts_with("POST") {
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+        client_stream.write_all(response.as_bytes()).await?;
+        return Ok(());
+    } else if request.starts_with("CONNECT") {
+        let response = "HTTP/1.1 200 Connection Established\r\n\r\n";
+        client_stream.write_all(response.as_bytes()).await?;
+    }
+    
     let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
