@@ -3,4 +3,6 @@ name = "RustyProxy"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.37", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.20"
+futures-util = "0.3"
