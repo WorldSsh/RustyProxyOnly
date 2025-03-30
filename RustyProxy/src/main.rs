@@ -54,8 +54,9 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let server_write = Arc::new(Mutex::new(server_write));
     
     tokio::try_join!(
-        transfer_data(client_read, server_write),
-        transfer_data(server_read, client_write)
+        transfer_data(client_read.clone(), server_write.clone()),
+        transfer_data(server_read.clone(), client_write.clone()),
+        bidirectional_transfer(client_read, server_write, server_read, client_write)
     )?;
     
     Ok(())
@@ -81,6 +82,19 @@ async fn transfer_data(
         write_guard.write_all(&buffer[..bytes_read]).await?;
     }
     
+    Ok(())
+}
+
+async fn bidirectional_transfer(
+    client_read: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
+    server_write: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    server_read: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
+    client_write: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+) -> Result<(), Error> {
+    tokio::try_join!(
+        transfer_data(client_read, server_write),
+        transfer_data(server_read, client_write)
+    )?;
     Ok(())
 }
 
