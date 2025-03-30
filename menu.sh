@@ -1,182 +1,113 @@
-#!/bin/bash
+use std::env;
+use std::io::Error;
+use std::sync::Arc;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Mutex;
+use tokio::time::{timeout, Duration};
 
-PORTS_FILE="/opt/rustyproxy/ports"
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let port = get_port();
+    let listener = TcpListener::bind(format!("[::]:{}", port)).await?;
+    println!("Servidor iniciado na porta: {}", port);
+    start_proxy(listener).await;
+    Ok(())
+}
 
-# Função para verificar se uma porta está em uso
-is_port_in_use() {
-    local port=$1
+async fn start_proxy(listener: TcpListener) {
+    loop {
+        match listener.accept().await {
+            Ok((client_stream, addr)) => {
+                println!("Nova conexão de: {}", addr);
+                tokio::spawn(async move {
+                    if let Err(e) = handle_client(client_stream).await {
+                        eprintln!("Erro ao processar cliente {}: {}", addr, e);
+                    }
+                });
+            }
+            Err(e) => eprintln!("Erro ao aceitar conexão: {}", e),
+        }
+    }
+}
+
+async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
+    let mut buffer = [0; 1024];
+    let bytes_read = client_stream.read(&mut buffer).await?;
+    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
     
-    if netstat -tuln 2>/dev/null | grep -q ":[0-9]*$port\b"; then
-        return 0  
-    elif ss -tuln 2>/dev/null | grep -q ":[0-9]*$port\b"; then
-        return 0  
-    else
-        return 1 
-    fi
-}
-
-
-# Função para abrir uma porta de proxy
-add_proxy_port() {
-    local port=$1
-    local status=${2:-"@RustyProxy"}
-
-    if is_port_in_use $port; then
-        echo "A porta $port já está em uso."
-        return
-    fi
-
-    local command="/opt/rustyproxy/proxy --port $port --status $status"
-    local service_file_path="/etc/systemd/system/proxy${port}.service"
-    local service_file_content="[Unit]
-Description=RustyProxy${port}
-After=network.target
-
-[Service]
-LimitNOFILE=infinity
-LimitNPROC=infinity
-LimitMEMLOCK=infinity
-LimitSTACK=infinity
-LimitCORE=0
-LimitAS=infinity
-LimitRSS=infinity
-LimitCPU=infinity
-LimitFSIZE=infinity
-Type=simple
-ExecStart=${command}
-Restart=always
-
-[Install]
-WantedBy=multi-user.target"
-
-    echo "$service_file_content" | sudo tee "$service_file_path" > /dev/null
-    sudo systemctl daemon-reload
-    sudo systemctl enable "proxy${port}.service"
-    sudo systemctl start "proxy${port}.service"
-
-    # Salvar a porta no arquivo
-    echo $port >> "$PORTS_FILE"
-    echo "Porta $port ABERTA COM SUCESSO."
-}
-
-# Função para fechar uma porta de proxy
-del_proxy_port() {
-    local port=$1
-
-    sudo systemctl disable "proxy${port}.service"
-    sudo systemctl stop "proxy${port}.service"
-    sudo rm -f "/etc/systemd/system/proxy${port}.service"
-    sudo systemctl daemon-reload
-
-    # Remover a porta do arquivo
-    sed -i "/^$port$/d" "$PORTS_FILE"
-    echo "Porta $port FECHADA COM SUCESSO."
-    sleep 3
-    clear
-}
-
-# Função para desinstalar o RustyProxy
-uninstall_rustyproxy() {
-    echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
-    sleep 4
-    clear
-
-# Parar e remover todos os serviços
-    if [ -s "$PORTS_FILE" ]; then
-        while read -r port; do
-            del_proxy_port $port
-        done < "$PORTS_FILE"
-    fi
-	
-	# Remover binário, arquivos e diretórios
-    sudo rm -rf /opt/rustyproxy
-    sudo rm -f "$PORTS_FILE"
-
-    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
-    echo -e "\E[44;1;37m           RUSTY PROXY DESINSTALADO COM SUCESSO.          \E[0m"
-    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
-    sleep 4
-    clear
-}
-
-# Função para exibir o menu formatado
-show_menu() {
-    clear
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\E[44;1;37m                   ⚒ RUSTY PROXY MANAGER ⚒                   \E[0m"
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
+    if request.starts_with("GET") || request.starts_with("POST") {
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+        client_stream.write_all(response.as_bytes()).await?;
+        return Ok(());
+    } else if request.starts_with("CONNECT") {
+        let response = "HTTP/1.1 200 Connection Established\r\n\r\n";
+        client_stream.write_all(response.as_bytes()).await?;
+    }
     
-    # Verifica se há portas ativas
-    if [ ! -s "$PORTS_FILE" ]; then
-        printf " PORTA ATIVA(s): %-34s\n" "NENHUMA"
-    else
-        active_ports=""
-        while read -r port; do
-            active_ports+=" $port"
-        done < "$PORTS_FILE"
-        printf " PORTA(s):%-35s\n" "$active_ports"
-    fi
+    let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
+        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
+        Ok(_) => "0.0.0.0:1194",
+        Err(_) => "0.0.0.0:22",
+    };
 
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
-[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mFECHAR PORTAS \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mDESINSTALAR RUSTY PROXY \033[1;31m
-[\033[1;36m00\033[1;31m] \033[1;37m\033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo
-  read -p "  O QUE DESEJA FAZER ?: " option
+    let server_stream = match TcpStream::connect(addr_proxy).await {
+        Ok(stream) => stream,
+        Err(_) => {
+            eprintln!("Erro ao conectar-se ao servidor proxy em {}", addr_proxy);
+            return Ok(());
+        }
+    };
 
-    case $option in
-        1)
-		    clear
-            read -p "DIGITE A PORTA: " port
-            while ! [[ $port =~ ^[0-9]+$ ]]; do
-                echo "DIGITE UMA PORTA VÁLIDA."
-                read -p "DIGITE A PORTA: " port
-            done
-            read -p "DIGITE O STATUS DE CONEXÃO (DEIXE VAZIO PARA PADRÃO): " status
-            add_proxy_port $port "$status"
-			clear
-            read -p "◉ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
-            ;;
-        2)
-		    clear
-            read -p "DIGITE A PORTA: " port
-            while ! [[ $port =~ ^[0-9]+$ ]]; do
-                echo "DIGITE UMA PORTA VÁLIDA."
-                read -p "DIGITE A PORTA: " port
-		done
-            del_proxy_port $port
-	    clear
-            read -p "◉ PORTA DESATIVADA. PRESSIONE QUALQUER TC PARA VOLTAR AO MENU." dummy
-	    clear
-            ;;
-		3)
-          clear
-            uninstall_rustyproxy
-            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
-	    clear
-            exit 0
-            ;;			
-        0)
-            exit 0
-	    clear
-            ;;
-        *)
-            echo "OPÇÃO INVÁLIDA.´PRESSIONE QUALQUER TC PARA VOLTAR AO MENU. inválida."
-            read -n 1 dummy
-            ;;
-    esac
+    let (client_read, client_write) = client_stream.into_split();
+    let (server_read, server_write) = server_stream.into_split();
+
+    let client_read = Arc::new(Mutex::new(client_read));
+    let client_write = Arc::new(Mutex::new(client_write));
+    let server_read = Arc::new(Mutex::new(server_read));
+    let server_write = Arc::new(Mutex::new(server_write));
+
+    tokio::try_join!(
+        transfer_data(client_read.clone(), server_write.clone()),
+        transfer_data(server_read.clone(), client_write.clone())
+    )?;
+
+    Ok(())
 }
 
+async fn transfer_data(
+    read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
+    write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+) -> Result<(), Error> {
+    let mut buffer = [0; 8192];
+    loop {
+        let bytes_read = {
+            let mut reader = read_stream.lock().await;
+            match reader.read(&mut buffer).await {
+                Ok(0) => break, 
+                Ok(n) => n,
+                Err(_) => break,
+            }
+        };
 
+        let mut writer = write_stream.lock().await;
+        if writer.write_all(&buffer[..bytes_read]).await.is_err() {
+            break;
+        }
+    }
+    Ok(())
+}
 
-# Verificar se o arquivo de portas existe, caso contrário, criar
-if [ ! -f "$PORTS_FILE" ]; then
-    sudo touch "$PORTS_FILE"
-fi
+async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
+    let mut buffer = vec![0; 8192];
+    let bytes_peeked = stream.peek(&mut buffer).await?;
+    Ok(String::from_utf8_lossy(&buffer[..bytes_peeked]).to_string())
+}
 
-# Loop do menu
-while true; do
-    show_menu
-done
+fn get_port() -> u16 {
+    env::args().nth(2).unwrap_or_else(|| "80".to_string()).parse().unwrap_or(80)
+}
+
+fn get_status() -> String {
+    env::args().nth(4).unwrap_or_else(|| "@RustyManager".to_string())
+}
