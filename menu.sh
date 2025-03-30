@@ -228,6 +228,7 @@ show_menu() {
             ;;	
 			
         0)
+	    clear
             exit 0
             ;;
         *)
