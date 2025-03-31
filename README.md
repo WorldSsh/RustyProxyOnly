@@ -1,6 +1,4 @@
 # RUSTY PROXY 2025 
-# EDITADO POR: @JEFFSSH
-# DESENVOLVEDOR: @ULEKBR
 
 ![Uploading WhatsApp Image 2025-03-31 at 19.51.21.jpeg…]()
 
