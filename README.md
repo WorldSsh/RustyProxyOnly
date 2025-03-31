@@ -1,5 +1,8 @@
-# RustyProxyOnly
-![photo_5130016699528097587_y](https://github.com/user-attachments/assets/1f756d07-8923-460a-858f-7d581db247a1)
+# RUSTY PROXY 2025 
+# EDITADO POR: @JEFFSSH
+# DESENVOLVEDOR: @ULEKBR
+
+![Uploading WhatsApp Image 2025-03-31 at 19.51.21.jpeg…]()
 
 
 O RustyProxy é um script simples e otimizado, configurável para servidores de proxy que suporta MultProtocols.
