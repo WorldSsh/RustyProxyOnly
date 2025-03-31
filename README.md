@@ -1,5 +1,5 @@
 # ⚒ RUSTY PROXY MANAGER ⚒ 
-- **Versão 2.0**
+- **Versão 0.2**
 
 ![c5967df7-7fc9-433c-9209-d3e8b2ab9f35](https://github.com/user-attachments/assets/544c0c91-e631-4022-b41a-d5bd8aef1186)
 
