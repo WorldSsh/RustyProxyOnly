@@ -1,6 +1,6 @@
 #!/bin/bash
-#MENU RUSTYPROXY
-#EDIÇÃO @JeffSSh
+#MENU RUSTY PROXY 2025
+#EDIÇÃO @JeffSSh #DESENVOLVEDOR @UlekBR
 
 PORTS_FILE="/opt/rustyproxy/ports"
 
