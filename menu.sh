@@ -7,13 +7,14 @@ PORTS_FILE="/opt/rustyproxy/ports"
 add_proxy_port() {
     local port=$1
     local status=${2:-"@RustyProxy"}
+    local color=${3:-"green"}  # Cor padrão "green" se não for informada
 
     if is_port_in_use $port; then
-        echo "⛔ PORTA $port JÁ ESTA EM USO."
+        echo "⛔ PORTA $port JÁ ESTÁ EM USO."
         return
     fi
 
-    local command="/opt/rustyproxy/proxy --port $port --status \"<font color='#FF0000FF'>$status</font>\""
+    local command="/opt/rustyproxy/proxy --port $port --status \"$status\""
     local service_file_path="/etc/systemd/system/proxy${port}.service"
     local service_file_content="[Unit]
 Description=RustyProxy ${port}
@@ -33,10 +34,10 @@ WantedBy=multi-user.target"
     sudo systemctl enable "proxy${port}.service"
     sudo systemctl start "proxy${port}.service"
 
-    #SALVAR PORTAS NO ARQUIVO
-    echo "$port <font color='#FF0000FF'>$status</font>" >> "$PORTS_FILE"
+    # Salvar portas no arquivo com a cor escolhida
+    echo "$port <font color='$color'>$status</font>" >> "$PORTS_FILE"
     echo "✅ PORTA $port ABERTA COM SUCESSO."
-	clear
+    clear
 }
 
 #FUNÇÃO VERIFICAR PORTAS EM USO
@@ -179,15 +180,17 @@ show_menu() {
 
     case $option in
         1)
-            clear
-            read -p "DIGITE A PORTA PROXY: " port
-            while ! [[ $port =~ ^[0-9]+$ ]]; do
-                echo "DIGITE UMA PORTA VÁLIDA."
-                read -p "DIGITE A PORTA: " port
-            done
-            read -p "DIGITE O NOME DO STATUS: " status
-            add_proxy_port $port "$status"
-            read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+		       clear
+               read -p "DIGITE A PORTA: " port
+    while ! [[ $port =~ ^[0-9]+$ ]]; do
+        echo "DIGITE UMA PORTA VÁLIDA."
+        read -p "DIGITE A PORTA: " port
+    done
+    read -p "DIGITE O NOME DO STATUS: " status
+    read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " color
+
+    add_proxy_port $port "$status" "$color"
+    read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
         2)
             clear
