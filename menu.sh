@@ -34,7 +34,7 @@ WantedBy=multi-user.target"
     sudo systemctl start "proxy${port}.service"
 
     #SALVAR PORTAS NO ARQUIVO COM CÓDIGO ANSI
-    echo -e "$port <font color='green'>$status</font>" >> "$PORTS_FILE"
+    echo -e "$port \033[1;32m$status\033[0m" >> "$PORTS_FILE"
     echo "Porta $port ABERTA COM SUCESSO."
     clear
 }
@@ -97,7 +97,7 @@ update_proxy_status() {
     sudo systemctl restart "proxy${port}.service"
 
     #ATUALIZAR O ARQUIVO DE PORTAS COM CÓDIGO ANSI
-    sed -i "s/^$port .*/$port <font color='green'>$status</font>" "$PORTS_FILE"
+    sed -i "s/^$port .*/$port \033[1;32m$status\033[0m" "$PORTS_FILE"
 
     echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
     sleep 3
