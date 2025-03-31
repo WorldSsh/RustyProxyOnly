@@ -77,7 +77,6 @@ del_proxy_port() {
 
 #FUNÇÃO PARA ALTERAR UM STATUS DE UM PROXY
 update_proxy_status() {
-update_proxy_status() {
     local port=$1
     local new_status=$2
     local new_color=$3  # NOVA COR INFORMADA
@@ -99,8 +98,8 @@ update_proxy_status() {
     sudo systemctl daemon-reload
     sudo systemctl restart "proxy${port}.service"
 
-    #ATUALIZAR O ARQUIVO DE PORTAS
-        sed -i "/^$port /d" "$PORTS_FILE"
+    # ATUALIZAR O ARQUIVO DE PORTAS
+    sed -i "/^$port /d" "$PORTS_FILE"
     echo "$port <font color='$new_color'>$new_status</font>" >> "$PORTS_FILE"
     echo "✅ STATUS DA PORTA $port ATUALIZADO PARA $new_status COM A COR $new_color."
     sleep 3
@@ -181,68 +180,68 @@ show_menu() {
     echo
     read -p "  O QUE DESEJA FAZER ?: " option
 
-    case $option in
+        case $option in
         1)
-		       clear
-               read -p "DIGITE A PORTA: " port
-    while ! [[ $port =~ ^[0-9]+$ ]]; do
+	clear
+        read -p "DIGITE A PORTA: " port
+        while ! [[ $port =~ ^[0-9]+$ ]]; do
         echo "DIGITE UMA PORTA VÁLIDA."
         read -p "DIGITE A PORTA: " port
-    done
-    read -p "DIGITE O NOME DO STATUS: " status
-    read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " color
+        done
+        read -p "DIGITE O NOME DO STATUS: " status
+        read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " color
 
-    add_proxy_port $port "$status" "$color"
-    read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+        add_proxy_port $port "$status" "$color"
+        read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
         2)
-            clear
-            read -p "DIGITE A PORTA DO PROXY: " port
-            while ! [[ $port =~ ^[0-9]+$ ]]; do
-                echo "DIGITE UMA PORTA VÁLIDA."
-                read -p "DIGITE A PORTA: " port
-            done
-            del_proxy_port $port
-            read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-			clear
-            ;;
+        clear
+        read -p "DIGITE A PORTA DO PROXY: " port
+        while ! [[ $port =~ ^[0-9]+$ ]]; do
+        echo "DIGITE UMA PORTA VÁLIDA."
+        read -p "DIGITE A PORTA: " port
+        done
+        del_proxy_port $port
+        read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+	clear
+        ;;
 			
-		3)
-            clear
-            restart_all_proxies
-            read -p "✅ PORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;	
+	3)
+        clear
+        restart_all_proxies
+        read -p "✅ PORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+        ;;	
 			
-            4)
-            clear
-            read -p "DIGITE A PORTA: " port
-            while ! [[ $port =~ ^[0-9]+$ ]]; do
-                echo "DIGITE UMA PORTA VÁLIDA."
+        4)
+        clear
+        read -p "DIGITE A PORTA: " port
+        while ! [[ $port =~ ^[0-9]+$ ]]; do
+        echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
-            done
-            read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
-            read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " new_color
-            update_proxy_status $port "$new_status" "$new_color"
-            read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;
+        done
+        read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
+        read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " new_color
+        update_proxy_status $port "$new_status" "$new_color"
+        read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+        ;;
 			
 	5)
-          clear
-            uninstall_rustyproxy
-            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
-	    clear
-            exit 0
-            ;;	
+        clear
+        uninstall_rustyproxy
+        read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
+	clear
+        exit 0
+        ;;	
 			
         0)
-	    clear
-            exit 0
-            ;;
+	clear
+        exit 0
+        ;;
         *)
-            echo "OPÇÃO INVÁLIDA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
-            read -n 1 dummy
-            ;;
-    esac
+        echo "OPÇÃO INVÁLIDA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
+        read -n 1 dummy
+        ;;
+        esac
 }
 
 #VERIFICAR SE O ARQUIVO DE PORTAS EXISTE, CASO CONTRÁRIO, CRIAR
