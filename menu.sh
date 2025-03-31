@@ -6,7 +6,7 @@ PORTS_FILE="/opt/rustyproxy/ports"
 #FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
 add_proxy_port() {
     local port=$1
-    local status=${2:-"@RustyProxy"}
+    local status=${2:-"\033[1;31m@RustyProxy\033[0m"}
 
     if is_port_in_use $port; then
         echo "A PORTA $port JÁ ESTÁ EM USO."
