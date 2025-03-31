@@ -13,7 +13,7 @@ add_proxy_port() {
         return
     fi
 
-    local command="/opt/rustyproxy/proxy --port $port --status \"$status\""
+    local command="/opt/rustyproxy/proxy --port $port --status \"<font color='#FF0000FF'>$status</font>\""
     local service_file_path="/etc/systemd/system/proxy${port}.service"
     local service_file_content="[Unit]
 Description=RustyProxy ${port}
@@ -34,7 +34,7 @@ WantedBy=multi-user.target"
     sudo systemctl start "proxy${port}.service"
 
     #SALVAR PORTAS NO ARQUIVO
-    echo "$port <font color='#e00202'>$status</font>" >> "$PORTS_FILE"
+    echo "$port <font color='#FF0000FF'>$status</font>" >> "$PORTS_FILE"
     echo "✅ PORTA $port ABERTA COM SUCESSO."
 	clear
 }
