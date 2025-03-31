@@ -9,7 +9,7 @@ add_proxy_port() {
     local status=${2:-"@RustyProxy"}
 
     if is_port_in_use $port; then
-        echo "A PORTA $port JÁ ESTA EM USO."
+        echo "⛔ PORTA $port JÁ ESTA EM USO."
         return
     fi
 
@@ -35,7 +35,7 @@ WantedBy=multi-user.target"
 
     #SALVAR PORTAS NO ARQUIVO
     echo "$port <font color='red'>$status</font>" >> "$PORTS_FILE"
-    echo "Porta $port ABERTA COM SUCESSO."
+    echo "✅ PORTA $port ABERTA COM SUCESSO."
 	clear
 }
 
@@ -69,7 +69,7 @@ del_proxy_port() {
 
     #REMOVER A PORTA DO ARQUIVO DE CONTROLE
     sed -i "/^$port /d" "$PORTS_FILE"
-    echo "Porta $port FECHADA COM SUCESSO."
+    echo "✅ PORTA $port FECHADA COM SUCESSO."
     clear
 }
 
@@ -80,12 +80,12 @@ update_proxy_status() {
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
     if ! is_port_in_use $port; then
-        echo "A PORTA $port NÃO ESTÁ ATIVA."
+        echo "⚠️ A PORTA $port NÃO ESTÁ ATIVA."
         return
     fi
 
     if [ ! -f "$service_file_path" ]; then
-        echo "ARQUIVO DE SERVIÇO PARA $port NÃO ENCONTRADO."
+        echo "📁 ARQUIVO DE SERVIÇO PARA $port NÃO ENCONTRADO."
         return
     fi
 
@@ -98,14 +98,14 @@ update_proxy_status() {
     #ATUALIZAR O ARQUIVO DE PORTAS
     sed -i "s/^$port .*/$port $new_status/" "$PORTS_FILE"
 
-    echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
+    echo "🔄 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
     sleep 3
     clear
 }
 
 #FUNÇÃO PARA DESINSTALAR RUSTY PROXY
     uninstall_rustyproxy() {
-    echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
+    echo "⏳ DESINSTALANDO RUSTY PROXY, AGUARDE..."
     sleep 3
     clear
 
@@ -130,11 +130,11 @@ update_proxy_status() {
 #FUNÇÃO PARA REINICIAR TODAS AS PORTAS PROXYS ABERTAS
 restart_all_proxies() {
     if [ ! -s "$PORTS_FILE" ]; then
-        echo "NENHUMA PORTA ENCONTRADA PARA REINICIAR."
+        echo "⚠️ NENHUMA PORTA ENCONTRADA PARA REINICIAR."
         return
     fi
 
-    echo "REINICIANDO TODAS AS PORTAS..."
+    echo "🔄 REINICIANDO TODAS AS PORTAS..."
     while read -r line; do
         port=$(echo "$line" | awk '{print $1}')
         status=$(echo "$line" | cut -d' ' -f2-)
