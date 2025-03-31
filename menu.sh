@@ -9,7 +9,7 @@ add_proxy_port() {
     local status=${2:-"@RustyProxy"}
 
     if is_port_in_use $port; then
-        echo "A PORTA $port JÁ ESTA EM USO."
+        echo "A PORTA $port JÁ ESTÁ EM USO."
         return
     fi
 
@@ -33,10 +33,10 @@ WantedBy=multi-user.target"
     sudo systemctl enable "proxy${port}.service"
     sudo systemctl start "proxy${port}.service"
 
-    #SALVAR PORTAS NO ARQUIVO
-    echo "$port <font color='red'>$status</font>" >> "$PORTS_FILE"
+    #SALVAR PORTAS NO ARQUIVO COM CÓDIGO ANSI
+    echo -e "$port \033[1;31m$status\033[0m" >> "$PORTS_FILE"
     echo "Porta $port ABERTA COM SUCESSO."
-	clear
+    clear
 }
 
 #FUNÇÃO VERIFICAR PORTAS EM USO
@@ -53,6 +53,7 @@ is_port_in_use() {
     else
         return 1
     fi
+
 }
 
 #FUNÇÃO PARA FECHAR PORTAS DE UM PROXY
@@ -95,8 +96,8 @@ update_proxy_status() {
     sudo systemctl daemon-reload
     sudo systemctl restart "proxy${port}.service"
 
-    #ATUALIZAR O ARQUIVO DE PORTAS
-    sed -i "s/^$port .*/$port <font color='red'>$new_status/</font>" "$PORTS_FILE"
+    #ATUALIZAR O ARQUIVO DE PORTAS COM CÓDIGO ANSI
+    sed -i "s/^$port .*/$port \033[1;31m$new_status\033[0m/" "$PORTS_FILE"
 
     echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
     sleep 3
