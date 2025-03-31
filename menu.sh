@@ -6,8 +6,8 @@ PORTS_FILE="/opt/rustyproxy/ports"
 #FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
 add_proxy_port() {
     local port=$1
-    local status=${2:-"@Rusty Proxy"}
-    local color=${3:-"green"}  #COR PADRÃO "GREEN SE NÃO FOR INFORMADA.
+    local status=${2:-"@RustyProxy"}
+    local color=${3:-"green"}  # Cor padrão "green" se não for informada
 
     if is_port_in_use $port; then
         echo "⛔ PORTA $port JÁ ESTÁ EM USO."
@@ -34,7 +34,7 @@ WantedBy=multi-user.target"
     sudo systemctl enable "proxy${port}.service"
     sudo systemctl start "proxy${port}.service"
 
-    # Salvar portas no arquivo com a cor escolhida
+    # SALVAR PORTAS ESCOLHIDAS
     echo "$port <font color='$color'>$status</font>" >> "$PORTS_FILE"
     echo "✅ PORTA $port ABERTA COM SUCESSO."
     clear
@@ -76,8 +76,10 @@ del_proxy_port() {
 
 #FUNÇÃO PARA ALTERAR UM STATUS DE UM PROXY
 update_proxy_status() {
+update_proxy_status() {
     local port=$1
     local new_status=$2
+    local new_color=$3  # NOVA COR INFORMADA
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
     if ! is_port_in_use $port; then
@@ -97,10 +99,10 @@ update_proxy_status() {
     sudo systemctl restart "proxy${port}.service"
 
     #ATUALIZAR O ARQUIVO DE PORTAS
-    sed -i "s/^$port .*/$port $new_status/" "$PORTS_FILE"
-
-    echo "🔄 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
-    sleep 2
+        sed -i "/^$port /d" "$PORTS_FILE"
+    echo "$port <font color='$new_color'>$new_status</font>" >> "$PORTS_FILE"
+    echo "✅ STATUS DA PORTA $port ATUALIZADO PARA $new_status COM A COR $new_color."
+    sleep 3
     clear
 }
 
@@ -217,8 +219,7 @@ show_menu() {
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-             read -p "DIGITE O NOVO DO STATUS: " new_status
-             read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " color
+            read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
             update_proxy_status $port "$new_status"
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
