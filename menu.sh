@@ -1,5 +1,6 @@
 #!/bin/bash
 #MENU RUSTYPROXY
+#EDIÇÃO @JeffSSh
 
 PORTS_FILE="/opt/rustyproxy/ports"
 
