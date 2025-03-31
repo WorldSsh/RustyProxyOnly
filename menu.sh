@@ -212,7 +212,7 @@ show_menu() {
             read -p "✅ PORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
-        4)
+            4)
             clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
@@ -220,7 +220,8 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
-            update_proxy_status $port "$new_status"
+            read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " new_color
+            update_proxy_status $port "$new_status" "$new_color"
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 			
