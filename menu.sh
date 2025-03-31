@@ -100,7 +100,7 @@ update_proxy_status() {
     sed -i "s/^$port .*/$port $new_status/" "$PORTS_FILE"
 
     echo "🔄 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
-    sleep 3
+    sleep 2
     clear
 }
 
@@ -217,7 +217,8 @@ show_menu() {
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
+             read -p "DIGITE O NOVO DO STATUS: " new_status
+             read -p "DIGITE A COR DO STATUS (ex: red, blue, yellow): " color
             update_proxy_status $port "$new_status"
             read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
