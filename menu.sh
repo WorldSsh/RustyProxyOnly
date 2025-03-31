@@ -34,7 +34,7 @@ WantedBy=multi-user.target"
     sudo systemctl start "proxy${port}.service"
 
     #SALVAR PORTAS NO ARQUIVO
-    echo "$port <font color='red'>$status</font>" >> "$PORTS_FILE"
+    echo "$port <font color='#e00202'>$status</font>" >> "$PORTS_FILE"
     echo "✅ PORTA $port ABERTA COM SUCESSO."
 	clear
 }
@@ -167,9 +167,9 @@ show_menu() {
     fi
 
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
-[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mFECHAR PORTAS \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PORTAS \033[1;31m
+    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
+[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVAR PROXY \033[1;31m
+[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PROXY \033[1;31m
 [\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
 [\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
@@ -180,7 +180,7 @@ show_menu() {
     case $option in
         1)
             clear
-            read -p "DIGITE A PORTA: " port
+            read -p "DIGITE A PORTA PROXY: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
@@ -191,7 +191,7 @@ show_menu() {
             ;;
         2)
             clear
-            read -p "DIGITE A PORTA: " port
+            read -p "DIGITE A PORTA DO PROXY: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
