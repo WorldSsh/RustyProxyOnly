@@ -6,8 +6,8 @@ PORTS_FILE="/opt/rustyproxy/ports"
 #FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
 add_proxy_port() {
     local port=$1
-    local status=${2:-"@RustyProxy"}
-    local color=${3:-"green"}  # Cor padrão "green" se não for informada
+    local status=${2:-"@Rusty Proxy"}
+    local color=${3:-"green"}  #COR PADRÃO "GREEN SE NÃO FOR INFORMADA.
 
     if is_port_in_use $port; then
         echo "⛔ PORTA $port JÁ ESTÁ EM USO."
