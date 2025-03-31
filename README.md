@@ -17,6 +17,6 @@ Para instalar o RustyProxyOnly, execute o seguinte comando no terminal:
 bash <(wget -qO- https://raw.githubusercontent.com/WorldSsh/RustyProxyOnly/refs/heads/main/install.sh)
 ```
 
-Desenvolvedor @UlekBR
-Editado por: JeffSsh
-Canal Oficial Rusty Manager: https://t.me/rustymanagergroup
+##Desenvolvedor @UlekBR
+##Editado por: JeffSsh
+##Canal Oficial Rusty Manager: https://t.me/rustymanagergroup
