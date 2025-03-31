@@ -140,23 +140,11 @@ restart_all_proxies() {
         status=$(echo "$line" | cut -d' ' -f2-)
         del_proxy_port "$port"
         add_proxy_port "$port" "$status"
-        sudo systemctl enable "proxy${port}.service"
-        sudo systemctl start "proxy${port}.service"
     done < "$PORTS_FILE"
 
     echo "✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
     sleep 3
     clear
-}
-
-#VERIFICAR SE O ARQUIVO DE PORTAS EXISTE, CASO CONTRÁRIO, CRIAR
-if [ ! -f "$PORTS_FILE" ]; then
-    sudo touch "$PORTS_FILE"
-fi
-
-# REINICIAR AUTOMATICAMENTE TODOS OS PROXYS AO INICIAR O SCRIPT
-restart_all_proxies
-
 }
 
 #EXIBIR MENU
