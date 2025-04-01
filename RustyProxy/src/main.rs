@@ -37,12 +37,12 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .write_all(format!("HTTP/1.1 101 Conexão Estabelecida {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let mut buffer = [0; 4096];
+    let mut buffer = [0; 1024];
     client_stream.read(&mut buffer).await?;
     client_stream
         .write_all(format!("HTTP/1.1 200 Autenticado {}\r\n\r\n", status).as_bytes())
         .await?;
-        
+
     let addr_proxy = match timeout(Duration::from_secs(2), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
@@ -66,9 +66,9 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let server_write = Arc::new(Mutex::new(server_write));
 
     tokio::try_join!(
-    transfer_data(client_read.clone(), server_write.clone()),
-    transfer_data(server_read.clone(), client_write.clone())
-)?;
+        transfer_data(client_read.clone(), server_write.clone()),
+        transfer_data(server_read.clone(), client_write.clone())
+    )?;
 
     Ok(())
 }
