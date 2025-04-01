@@ -33,48 +33,30 @@ async fn start_proxy(listener: TcpListener) {
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
-    println!("[INFO] Cliente conectado, enviando status inicial...");
-    
     client_stream
-        .write_all(format!("HTTP/1.1 101 Conexão Estabelecida em {} \r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let mut buffer = [0; 4096]; // Em vez de 8192
+    let mut buffer = [0; 1024];
     client_stream.read(&mut buffer).await?;
-    println!("[INFO] Cliente autenticado com sucesso.");
-
     client_stream
-        .write_all(format!("HTTP/1.1 200 {} - Autenticado\r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let addr_proxy = match timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await {
-        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => {
-            println!("[INFO] Identificado tráfego SSH, encaminhando para 0.0.0.0:22");
-            "0.0.0.0:22"
-        }
-        Ok(_) => {
-            println!("[INFO] Tráfego não identificado, encaminhando para 0.0.0.0:1194");
-            "0.0.0.0:1194"
-        }
+    let addr_proxy = match timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await 
+        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
+        Ok(_) => "0.0.0.0:1194",
+        Err(_) => "0.0.0.0:22",
+    };
+
+    let server_stream = match TcpStream::connect(addr_proxy).await {
+        Ok(stream) => stream,
         Err(_) => {
-            println!("[WARN] Timeout ao identificar protocolo, assumindo SSH.");
-            "0.0.0.0:22"
+            eprintln!("Erro ao conectar-se ao servidor proxy em {}", addr_proxy);
+            return Ok(());
         }
     };
 
-    println!("[INFO] Conectando ao proxy: {}", addr_proxy);
-    let server_stream = match TcpStream::connect(addr_proxy).await {
-    Ok(stream) => {
-        println!("[INFO] Conectado ao servidor proxy com sucesso.");
-        stream
-    }
-    Err(e) => {
-        eprintln!("[ERRO] Falha ao conectar-se ao servidor proxy em {}: {}", addr_proxy, e);
-        return Err(e); // Retorna o erro para evitar comportamento inesperado
-    }
-};
-
-    println!("[INFO] Iniciando redirecionamento de dados...");
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
 
@@ -86,38 +68,9 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     tokio::try_join!(
     transfer_data(client_read.clone(), server_write.clone()),
     transfer_data(server_read.clone(), client_write.clone())
-)?;
-    read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
-    write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
-) -> Result<(), Error> {
-    let mut buffer = [0; 4096]; // Em vez de 8192
-    loop {
-        let bytes_read = {
-            let mut reader = read_stream.lock().await;
-            match reader.read(&mut buffer).await {
-                Ok(0) => {
-                    println!("[INFO] Conexão fechada pelo peer.");
-                    break;
-                },
-                Ok(n) => n,
-                Err(e) => {
-                    eprintln!("[ERRO] Falha ao ler dados: {}", e);
-                    break;
-                }
-            }
-        };
 
-        let mut writer = write_stream.lock().await;
-        if writer.write_all(&buffer[..bytes_read]).await.is_err() {
-            eprintln!("[ERRO] Falha ao escrever dados");
-            break;
-        }
-    }
-    Ok(())
-}
     )?;
 
-    println!("[INFO] Encaminhamento de dados finalizado.");
     Ok(())
 }
 
@@ -125,7 +78,7 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = [0; 4096]; // Em vez de 8192
+    let mut buffer = [0; 8192];
     loop {
         let bytes_read = {
             let mut reader = read_stream.lock().await;
@@ -145,7 +98,7 @@ async fn transfer_data(
 }
 
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut buffer = [0; 4096]; // Em vez de 8192
+    let mut buffer = vec![0; 8192];
     let bytes_peeked = stream.peek(&mut buffer).await?;
     Ok(String::from_utf8_lossy(&buffer[..bytes_peeked]).to_string())
 }
