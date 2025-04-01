@@ -34,15 +34,16 @@ async fn start_proxy(listener: TcpListener) {
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
     client_stream
-        .write_all(format!("HTTP/1.1 101 \x1b[1;32m{}\x1b[0m\r\n\r\n", status).as_bytes()).await?;
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
     let mut buffer = [0; 1024];
     client_stream.read(&mut buffer).await?;
     client_stream
-        .write_all(format!("HTTP/1.1 200 \x1b[1;31m{}\x1b[0m\r\n\r\n", status).as_bytes()).await?;
+        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
+        .await?;
 
-    let addr_proxy = match timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await {
+    let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
         Err(_) => "0.0.0.0:22",
@@ -76,7 +77,7 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = [0; 4096];
+    let mut buffer = [0; 8192];
     loop {
         let bytes_read = {
             let mut reader = read_stream.lock().await;
@@ -96,7 +97,7 @@ async fn transfer_data(
 }
 
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut buffer = vec![0; 4096];
+    let mut buffer = vec![0; 8192];
     let bytes_peeked = stream.peek(&mut buffer).await?;
     Ok(String::from_utf8_lossy(&buffer[..bytes_peeked]).to_string())
 }
