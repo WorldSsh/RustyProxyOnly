@@ -36,7 +36,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     println!("[INFO] Cliente conectado, enviando status inicial...");
     
     client_stream
-        .write_all(format!("HTTP/1.1 101 {} - Conexão estabelecida\r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 101 Conexão Estabelecida em {} \r\n\r\n", status).as_bytes())
         .await?;
 
     let mut buffer = [0; 1024];
