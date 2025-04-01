@@ -33,30 +33,48 @@ async fn start_proxy(listener: TcpListener) {
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
+    println!("[INFO] Cliente conectado, enviando status inicial...");
+    
     client_stream
-        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 101 {} - Conexão estabelecida\r\n\r\n", status).as_bytes())
         .await?;
 
     let mut buffer = [0; 1024];
     client_stream.read(&mut buffer).await?;
+    println!("[INFO] Cliente autenticado com sucesso.");
+
     client_stream
-        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 200 {} - Autenticado\r\n\r\n", status).as_bytes())
         .await?;
 
     let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
-        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
-        Ok(_) => "0.0.0.0:1194",
-        Err(_) => "0.0.0.0:22",
+        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => {
+            println!("[INFO] Identificado tráfego SSH, encaminhando para 0.0.0.0:22");
+            "0.0.0.0:22"
+        }
+        Ok(_) => {
+            println!("[INFO] Tráfego não identificado, encaminhando para 0.0.0.0:1194");
+            "0.0.0.0:1194"
+        }
+        Err(_) => {
+            println!("[WARN] Timeout ao identificar protocolo, assumindo SSH.");
+            "0.0.0.0:22"
+        }
     };
 
+    println!("[INFO] Conectando ao proxy: {}", addr_proxy);
     let server_stream = match TcpStream::connect(addr_proxy).await {
-        Ok(stream) => stream,
+        Ok(stream) => {
+            println!("[INFO] Conectado ao servidor proxy com sucesso.");
+            stream
+        }
         Err(_) => {
-            eprintln!("Erro ao conectar-se ao servidor proxy em {}", addr_proxy);
+            eprintln!("[ERRO] Falha ao conectar-se ao servidor proxy em {}", addr_proxy);
             return Ok(());
         }
     };
 
+    println!("[INFO] Iniciando redirecionamento de dados...");
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
 
@@ -70,6 +88,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         transfer_data(server_read.clone(), client_write.clone())
     )?;
 
+    println!("[INFO] Encaminhamento de dados finalizado.");
     Ok(())
 }
 
