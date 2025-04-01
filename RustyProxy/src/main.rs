@@ -37,17 +37,26 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 4096];
     client_stream.read(&mut buffer).await?;
     client_stream
         .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
-        .await?;
+        .await?;       
 
-    let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
-        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
-        Ok(_) => "0.0.0.0:1194",
-        Err(_) => "0.0.0.0:22",
-    };
+    let addr_proxy = match timeout(Duration::from_secs(10), peek_stream(&mut client_stream)).await {
+    Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => {
+        println!("Conectando a servidor SSH");
+        "0.0.0.0:22"
+    },
+    Ok(_) => {
+        println!("Conectando a servidor OpenVPN");
+        "0.0.0.0:1194"
+    },
+    Err(_) => {
+        println!("Timeout na detecção do protocolo, assumindo SSH");
+        "0.0.0.0:22"
+    },
+};
 
     let server_stream = match TcpStream::connect(addr_proxy).await {
         Ok(stream) => stream,
@@ -77,7 +86,7 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = [0; 8192];
+    let mut buffer = [0; 4096];
     loop {
         let bytes_read = {
             let mut reader = read_stream.lock().await;
@@ -89,23 +98,38 @@ async fn transfer_data(
         };
 
         let mut writer = write_stream.lock().await;
-        if writer.write_all(&buffer[..bytes_read]).await.is_err() {
-            break;
+    loop {
+        let bytes_read = {
+            let mut reader = read_stream.lock().await;
+            match reader.read(&mut buffer).await {
+                Ok(0) => break, 
+                Ok(n) => n,
+                Err(_) => break,
+            }
+        };
+
+        let mut writer = write_stream.lock().await;
+        match writer.write_all(&buffer[..bytes_read]).await {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Erro ao escrever no socket: {}", e);
+                break;
+            }
         }
     }
     Ok(())
 }
 
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut buffer = vec![0; 8192];
-    let bytes_peeked = stream.peek(&mut buffer).await?;
+    let mut buffer = vec![0; 4096];
+    let bytes_peeked = match stream.peek(&mut buffer).await {
+        Ok(n) => n,
+        Err(_) => return Ok("".to_string()), // Retorna string vazia ao invés de falhar
+    };
     Ok(String::from_utf8_lossy(&buffer[..bytes_peeked]).to_string())
-}
-
-fn get_port() -> u16 {
-    env::args().nth(2).unwrap_or_else(|| "80".to_string()).parse().unwrap_or(80)
 }
 
 fn get_status() -> String {
     env::args().nth(4).unwrap_or_else(|| "@RustyManager".to_string())
 }
+    
