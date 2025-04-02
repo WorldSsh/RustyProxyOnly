@@ -4,6 +4,3 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1", features = ["io-util", "net", "macros", "rt-multi-thread", "sync", "time"] }
-
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["fmt"] }
