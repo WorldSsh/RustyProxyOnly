@@ -6,13 +6,17 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio::{time::{Duration}};
 use tokio::time::timeout;
+use tracing::{info, error};
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // Iniciando o proxy
+    tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::INFO) // Define nível mínimo de logs (pode ser DEBUG, TRACE)
+    .init();
     let port = get_port();
     let listener = TcpListener::bind(format!("[::]:{}", port)).await?;
-    println!("Iniciando serviço na porta: {}", port);
+    info!("Iniciando serviço na porta: {}", port);
     start_http(listener).await;
     Ok(())
 }
@@ -23,12 +27,12 @@ async fn start_http(listener: TcpListener) {
             Ok((client_stream, addr)) => {
                 tokio::spawn(async move {
                     if let Err(e) = handle_client(client_stream).await {
-                        println!("Erro ao processar cliente {}: {}", addr, e);
+                        error!("Erro ao processar cliente {}: {}", addr, e);
                     }
                 });
             }
             Err(e) => {
-                println!("Erro ao aceitar conexão: {}", e);
+                error!("Erro ao aceitar conexão: {}", e);
             }
         }
     }
@@ -46,29 +50,32 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .write_all(format!("HTTP/1.1 200 Conexão Estabelecida {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let mut addr_proxy = "0.0.0.0:22";
-    let result = timeout(Duration::from_secs(8), peek_stream(&mut client_stream)).await
-        .unwrap_or_else(|_| Ok(String::new()));
-
-    if let Ok(data) = result {
-        if data.contains("SSH") || data.is_empty() {
-            addr_proxy = "0.0.0.0:22";
-        } else {
-            addr_proxy = "0.0.0.0:1194";
-        }
-    } else {
-        addr_proxy = "0.0.0.0:22";
+    let addr_proxy;
+   let result = match timeout(Duration::from_secs(8), peek_stream(&mut client_stream)).await {
+    Ok(Ok(data)) => data,
+    Ok(Err(e)) => {
+        error!("Erro ao analisar fluxo de entrada: {}", e);
+        return Err(e);
     }
-
-    let server_connect = TcpStream::connect(addr_proxy).await;
-    if server_connect.is_err() {
-        println!("erro ao iniciar conexão para o proxy ");
-        return Ok(());
+    Err(_) => {
+        error!("Tempo limite excedido ao analisar fluxo de entrada.");
+        return Err(Error::new(std::io::ErrorKind::TimedOut, "Tempo limite excedido"));
     }
+};
 
+    if !result.is_empty() && result.contains("SSH") {
+    addr_proxy = "0.0.0.0:22";
+} else {
+    addr_proxy = "0.0.0.0:1194";
+}
 
-
-    let server_stream = server_connect?;
+    let server_stream = match TcpStream::connect(addr_proxy).await {
+    Ok(stream) => stream,
+    Err(e) => {
+        error!("Erro ao conectar ao proxy {}: {}", addr_proxy, e);
+        return Err(e);
+    }
+};
 
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
@@ -94,19 +101,23 @@ async fn transfer_data(
     let max_buffer_size = 64 * 1024; // Define um tamanho máximo razoável (64KB)
 
     loop {
-        let bytes_read = {
-            let mut read_guard = read_stream.lock().await;
-            read_guard.read(&mut buffer).await?
-        };
+        llet bytes_read = {
+    let mut read_guard = read_stream.lock().await;
+    read_guard.read(&mut buffer).await?
+};
+
+debug!("Recebido: {:?}", String::from_utf8_lossy(&buffer[..bytes_read]));
 
         if bytes_read == 0 {
             break;
         }
 
-        // Ajusta o tamanho do buffer, mas não ultrapassa o limite máximo
+        // buffer em 64kb mas não ultrapassa o limite máximo
         if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
-            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
-        }
+    buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
+} else if bytes_read < buffer.len() / 2 && buffer.len() > 1024 {
+    buffer.resize((buffer.len() / 2).max(1024), 0);
+}
 
         let mut write_guard = write_stream.lock().await;
         write_guard.write_all(&buffer[..bytes_read]).await?;
@@ -117,6 +128,42 @@ async fn transfer_data(
 
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
     let mut peek_buffer = vec![0; 4096];
+    match stream.peek(&mut peek_buffer).await {
+        Ok(bytes_peeked) => {
+            let data = &peek_buffer[..bytes_peeked];
+            Ok(String::from_utf8_lossy(data).to_string())
+        }
+        Err(e) => {
+            error!("Falha ao analisar fluxo de entrada: {}", e);
+            Ok(String::new()) // Retorna string vazia ao invés de erro crítico
+        }
+    }
+}
+    let mut peek_buffer = vec![0; 4096];
+    match stream.peek(&mut peek_buffer).await {
+        Ok(bytes_peeked) => {
+            let data = &peek_buffer[..bytes_peeked];
+            Ok(String::from_utf8_lossy(data).to_string())
+        }
+        Err(e) => {
+            error!("Falha ao analisar fluxo de entrada: {}", e);
+            Ok(String::new()) // Retorna string vazia ao invés de erro crítico
+        }
+    }
+}
+    let mut peek_buffer = vec![0; 4096];
+    match stream.peek(&mut peek_buffer).await {
+        Ok(bytes_peeked) => {
+            let data = &peek_buffer[..bytes_peeked];
+            Ok(String::from_utf8_lossy(data).to_string())
+        }
+        Err(e) => {
+            error!("Falha ao analisar fluxo de entrada: {}", e);
+            Ok(String::new()) // Retorna string vazia ao invés de erro crítico
+        }
+    }
+}
+    let mut peek_buffer = vec![0; 4096];
     let bytes_peeked = stream.peek(&mut peek_buffer).await?;
     let data = &peek_buffer[..bytes_peeked];
     let data_str = String::from_utf8_lossy(data);
@@ -125,18 +172,20 @@ async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
 
 
 fn get_port() -> u16 {
-    let args: Vec<String> = env::args().collect();
-    let mut port = 80;
-
-    for i in 1..args.len() {
-        if args[i] == "--port" {
-            if i + 1 < args.len() {
-                port = args[i + 1].parse().unwrap_or(80);
+    let mut args = env::args();
+    while let Some(arg) = args.next() {
+        if arg == "--port" {
+            if let Some(port_str) = args.next() {
+                if let Ok(port) = port_str.parse::<u16>() {
+    return port;
+} else {
+    error!("Porta inválida fornecida: {}. Usando porta padrão 80.", port_str);
+    return 80;
+}
             }
         }
     }
-
-    port
+    80
 }
 
 fn get_status() -> String {
