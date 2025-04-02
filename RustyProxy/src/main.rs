@@ -90,7 +90,9 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = [0; 4096];
+    let mut buffer = vec![0; 1024]; // Começa pequeno
+    let max_buffer_size = 64 * 1024; // Define um tamanho máximo razoável (64KB)
+
     loop {
         let bytes_read = {
             let mut read_guard = read_stream.lock().await;
@@ -99,6 +101,11 @@ async fn transfer_data(
 
         if bytes_read == 0 {
             break;
+        }
+
+        // Ajusta o tamanho do buffer, mas não ultrapassa o limite máximo
+        if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
+            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
         }
 
         let mut write_guard = write_stream.lock().await;
