@@ -59,7 +59,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .await?;
 
     let mut addr_proxy = "0.0.0.0:22";
-    let result = timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await
+    let result = timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await
         .unwrap_or_else(|_| Ok(String::new()));
 
     if let Ok(data) = result {
@@ -102,7 +102,7 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = [0; 8192];
+    let mut buffer = [0; 4096];
     loop {
         let bytes_read = {
             let mut read_guard = read_stream.lock().await;
@@ -121,7 +121,7 @@ async fn transfer_data(
 }
 
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut peek_buffer = vec![0; 8192];
+    let mut peek_buffer = vec![0; 4096];
     let bytes_peeked = stream.peek(&mut peek_buffer).await?;
     let data = &peek_buffer[..bytes_peeked];
     let data_str = String::from_utf8_lossy(data);
