@@ -45,21 +45,9 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     client_stream
         .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
         .await?;
-        
-         client_stream
-    .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
-    .await?;
-
-    client_stream
-        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
-        .await?;
-    
-    client_stream
-        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
-        .await?;
 
     let mut addr_proxy = "0.0.0.0:22";
-    let result = timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await
+    let result = timeout(Duration::from_secs(8), peek_stream(&mut client_stream)).await
         .unwrap_or_else(|_| Ok(String::new()));
 
     if let Ok(data) = result {
