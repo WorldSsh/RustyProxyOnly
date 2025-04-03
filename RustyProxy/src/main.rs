@@ -60,15 +60,15 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         addr_proxy = "0.0.0.0:22";
     }
 
-    let server_connect = TcpStream::connect(addr_proxy).await;
-    if server_connect.is_err() {
-        println!("erro ao iniciar conexão para o proxy ");
-        return Ok(());
-    }
+    println!("Conectando ao proxy: {}", addr_proxy);
 
+let server_connect = TcpStream::connect(addr_proxy).await;
+if let Err(e) = server_connect {
+    println!("ERRO AO CONECTAR AO PROXY: {}", e); //Msg para HTTP Injector
+    return Ok(());
+}
 
-
-    let server_stream = server_connect?;
+let server_stream = server_connect?; // Continua o fluxo normal
 
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
@@ -90,8 +90,8 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = vec![0; 1024];
-    let max_buffer_size = 64 * 1024;
+    let mut buffer = vec![0; 4096]; // Tamanho inicial de 4KB
+    let max_buffer_size = 64 * 1024; // Limite máximo de 64KB
 
     loop {
         let bytes_read = {
@@ -100,11 +100,12 @@ async fn transfer_data(
         };
 
         if bytes_read == 0 {
-            break;
+            break; // Conexão fechada
         }
 
-        if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
-            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
+        // Expande buffer de forma mais inteligente
+        if bytes_read >= buffer.len() * 3 / 4 && buffer.len() < max_buffer_size {
+            buffer.resize((buffer.len() + 4096).min(max_buffer_size), 0);
         }
 
         let mut write_guard = write_stream.lock().await;
