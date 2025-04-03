@@ -34,7 +34,7 @@ WantedBy=multi-user.target"
     sudo systemctl start "proxy${port}.service"
 
     #SALVAR PORTAS NO ARQUIVO COM CÓDIGO ANSI
-    echo -e "$port \033[1;32m$status\033[0m" >> "$PORTS_FILE"
+    echo -e "$port <font color='green'>$status</font>" >> "$PORTS_FILE"
     echo "✅ PORTA $port ABERTA COM SUCESSO."
     clear
 }
