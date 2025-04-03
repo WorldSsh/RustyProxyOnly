@@ -43,7 +43,10 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let mut buffer = vec![0; 4096];
     client_stream.read(&mut buffer).await?;
     client_stream
-        .write_all(format!("HTTP/1.1 200 Connection Established\r\nProxy-Agent: RustProxy\r\n\r\n {}\r\n\r\n", status).as_bytes())
+        .write_all(b"HTTP/1.1 200 Connection Established\r\n\
+                     Proxy-Agent: RustProxy\r\n\
+                     Connection: keep-alive\r\n\
+                     Keep-Alive: timeout=60, max=120\r\n\r\n")
         .await?;
 
     let mut addr_proxy = "0.0.0.0:22";
@@ -153,3 +156,5 @@ fn get_status() -> String {
 
     status
 }
+
+
