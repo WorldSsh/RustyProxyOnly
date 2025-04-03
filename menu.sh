@@ -153,7 +153,6 @@ restart_all_proxies() {
 #INSTALAR SSLH
 install_sslh() {
     echo "INSTALANDO SSLH..."
-    clear
     sudo apt update
     sudo apt install sslh -y
     clear
@@ -209,10 +208,11 @@ show_menu() {
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROX \033[1;31m
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
-[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
-[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
+[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PROXY \033[1;31m
+[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
+[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
+[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
+[\033[1;36m07\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo
@@ -231,7 +231,6 @@ show_menu() {
             read -p "✅ PROXY ATIVADO COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
         2)
-            clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
@@ -242,13 +241,13 @@ show_menu() {
 			clear
             ;;
 			
-		3)
+	3)
             clear
             restart_all_proxies
             read -p "✅ PROXYS REINICIADOS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
-        3)
+        4)
             clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
@@ -260,17 +259,19 @@ show_menu() {
             read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-        4)
+        5) 
+	    clear
             install_sslh
             read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-	5)
+	6)
+            clear
             remove_sslh
             read -p "✅ SSLH REMOVIDO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
       
-	6)
+	7)
           clear
             uninstall_rustyproxy
             read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
