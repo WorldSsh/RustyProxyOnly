@@ -111,7 +111,10 @@ async fn transfer_data(
 async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
     let mut peek_buffer = vec![0; 4096];
     let bytes_peeked = stream.peek(&mut peek_buffer).await?;
-    Ok(String::from_utf8_lossy(&peek_buffer[..bytes_peeked]).to_string())
+    let data = String::from_utf8_lossy(&peek_buffer[..bytes_peeked]).to_string();
+
+    println!("Peeked Data: {}", data); // <-- Adicione este log para depuração
+    Ok(data)
 }
 
 fn get_port() -> u16 {
