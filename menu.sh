@@ -6,7 +6,7 @@ PORTS_FILE="/opt/rustyproxy/ports"
 #FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
 add_proxy_port() {
     local port=$1
-    local status=${2:-"\033[1;31m@RustyProxy\033[0m"}
+    local status=${2:-"<font color='red'>@RustyProxy</font>"}
 
     if is_port_in_use $port; then
         echo "⛔️ A PORTA $port JÁ ESTÁ EM USO."
@@ -97,7 +97,7 @@ update_proxy_status() {
     sudo systemctl restart "proxy${port}.service"
 
     #ATUALIZAR O ARQUIVO DE PORTAS COM CÓDIGO ANSI
-    sed -i "s/^$port .*/$port \033[1;32m$status\033[0m" "$PORTS_FILE"
+    sed -i "s/^$port .*/$port <font color='green'>$status</font>" "$PORTS_FILE"
 
     echo "🔃 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
     sleep 3
