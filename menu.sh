@@ -148,14 +148,16 @@ restart_all_proxies() {
     clear
 }
 
-# Função para instalar e configurar SSLH
+#INSTALAR SSLH
 install_sslh() {
     echo "INSTALANDO SSLH..."
+    clear
     sudo apt update
     sudo apt install sslh -y
-    
+    clear
     echo "CONFIGURANDO SSLH..."
-    read -p "Digite a porta para SSLH (padrão 443): " SSLH_PORT
+    clear
+    read -p "DIGITE A PORTA SSLH (PADRÃO 443 OU 591): " SSLH_PORT
     SSLH_PORT=${SSLH_PORT:-443}
 
     sudo bash -c "cat > /etc/default/sslh <<EOF
@@ -205,8 +207,8 @@ show_menu() {
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
 [\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
 [\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33m[1;33mATIVAR SSLH \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33m[1;33mREMOVER SSLH \033[1;31m
+[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
+[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
 [\033[1;36m07\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
