@@ -3,7 +3,6 @@ use std::io::Error;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::Mutex;
 use tokio::{time::{Duration}};
 use tokio::time::timeout;
 
@@ -50,67 +49,25 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let result = timeout(Duration::from_secs(8), peek_stream(&mut client_stream)).await
         .unwrap_or_else(|_| Ok(String::new()));
 
-    if let Ok(data) = result {
-        if data.contains("SSH") || data.is_empty() {
-            addr_proxy = "0.0.0.0:22";
-        } else {
-            addr_proxy = "0.0.0.0:1194";
-        }
-    } else {
-        addr_proxy = "0.0.0.0:22";
+    let addr_proxy = match result {
+    Ok(data) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
+    Ok(_) => "0.0.0.0:1194",
+    Err(_) => {
+        println!("Erro ao identificar o protocolo, redirecionando para SSH por padrão.");
+        "0.0.0.0:22"
     }
+};
 
-    let server_connect = TcpStream::connect(addr_proxy).await;
-    if server_connect.is_err() {
-        println!("erro ao iniciar conexão para o proxy ");
-        return Ok(());
+    let server_stream = match TcpStream::connect(addr_proxy).await {
+    Ok(stream) => stream,
+    Err(e) => {
+        println!("Erro ao conectar ao proxy {}: {}", addr_proxy, e);
+        return Err(e);
     }
+};
 
-
-
-    let server_stream = server_connect?;
-
-    let (client_read, client_write) = client_stream.into_split();
-    let (server_read, server_write) = server_stream.into_split();
-
-    let client_read = Arc::new(Mutex::new(client_read));
-    let client_write = Arc::new(Mutex::new(client_write));
-    let server_read = Arc::new(Mutex::new(server_read));
-    let server_write = Arc::new(Mutex::new(server_write));
-
-    let client_to_server = transfer_data(client_read, server_write);
-    let server_to_client = transfer_data(server_read, client_write);
-
-    tokio::try_join!(client_to_server, server_to_client)?;
-
-    Ok(())
-}
-
-async fn transfer_data(
-    read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
-    write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
-) -> Result<(), Error> {
-    let mut buffer = vec![0; 1024]; // Começa pequeno
-    let max_buffer_size = 64 * 1024; // Define um tamanho máximo razoável (64KB)
-
-    loop {
-        let bytes_read = {
-            let mut read_guard = read_stream.lock().await;
-            read_guard.read(&mut buffer).await?
-        };
-
-        if bytes_read == 0 {
-            break;
-        }
-
-        // Ajusta o tamanho do buffer, mas não ultrapassa o limite máximo
-        if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
-            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
-        }
-
-        let mut write_guard = write_stream.lock().await;
-        write_guard.write_all(&buffer[..bytes_read]).await?;
-    }
+    // Transfere dados bidirecionalmente
+    tokio::io::copy_bidirectional(&mut client_stream, &mut server_stream).await?;
 
     Ok(())
 }
