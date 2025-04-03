@@ -283,10 +283,9 @@ show_menu() {
             read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-      5)
-	 install_sslh
-            read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;    
+    07)
+	fun_sslh
+	;;  
             
 	6)
           clear
