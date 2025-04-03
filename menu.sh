@@ -135,7 +135,7 @@ restart_all_proxies() {
         return
     fi
 
-    echo "REINICIANDO TODAS AS PORTAS..."
+    echo "REINICIANDO TODAS AS PORTAS DO PROXY..."
     while read -r line; do
         port=$(echo "$line" | awk '{print $1}')
         status=$(echo "$line" | cut -d' ' -f2-)
@@ -144,6 +144,24 @@ restart_all_proxies() {
     done < "$PORTS_FILE"
 
     echo "✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
+    sleep 3
+    clear
+}
+
+# Função para instalar e configurar SSLH
+install_sslh() {
+    echo "INSTALANDO SSLH..."
+    sudo apt update
+    sudo apt install sslh -y
+    
+    echo "CONFIGURANDO SSLH..."
+    sudo bash -c 'cat > /etc/default/sslh <<EOF
+DAEMON_OPTS="--user sslh --listen 0.0.0.0:443 --ssh 127.0.0.1:22 --openvpn 127.0.0.1:1194 --pidfile /var/run/sslh.pid -n"
+EOF'
+    
+    sudo systemctl restart sslh
+    sudo systemctl enable sslh
+    echo "✅ SSLH INSTALADO E CONFIGURADO COM SUCESSO."
     sleep 3
     clear
 }
@@ -169,10 +187,11 @@ show_menu() {
 
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
-[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mFECHAR PORTAS \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PORTAS \033[1;31m
+[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
+[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
 [\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
+[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
+[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo
@@ -188,7 +207,7 @@ show_menu() {
             done
             read -p "DIGITE O NOME DO STATUS: " status
             add_proxy_port $port "$status"
-            read -p "✅ PORTA ATIVADA COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ PROXY ATIVADO COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
         2)
             clear
@@ -198,14 +217,14 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             del_proxy_port $port
-            read -p "✅ PORTA DESATIVADA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ PROXY DESATIVADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
 			clear
             ;;
 			
 		3)
             clear
             restart_all_proxies
-            read -p "✅ PORTAS REINICIADAS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ PROXYS REINICIADOS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
         4)
@@ -215,12 +234,17 @@ show_menu() {
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            read -p "DIGITE O NOVO STATUS DE CONEXÃO: " new_status
+            read -p "DIGITE O NOVO STATUS DO PROXY: " new_status
             update_proxy_status $port "$new_status"
-            read -p "✅ STATUS DA PORTA ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
-			
-	5)
+
+      5)
+	 install_sslh
+            read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            ;;    
+            
+	6)
           clear
             uninstall_rustyproxy
             read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
