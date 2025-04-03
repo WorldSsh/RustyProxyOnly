@@ -150,45 +150,6 @@ restart_all_proxies() {
     clear
 }
 
-#INSTALAR SSLH
-install_sslh() {
-    echo "⚙️ INSTALANDO SSLH, AGUARDE..."
-    sleep 2
-    sudo apt update
-    sudo apt install sslh -y
-    clear
-    echo "⚒️ CONFIGURANDO SSLH..."
-    sleep 2
-    clear
-    read -p "DIGITE A PORTA SSLH (PADRÃO 443 OU 591): " SSLH_PORT
-    SSLH_PORT=${SSLH_PORT:-443}
-
-    sudo bash -c "cat > /etc/default/sslh <<EOF
-DAEMON_OPTS=\"--user sslh --listen 0.0.0.0:$SSLH_PORT --ssh 127.0.0.1:22 --openvpn 127.0.0.1:1194 --pidfile /var/run/sslh.pid -n\"
-EOF"
-
-    sudo systemctl restart sslh
-    sudo systemctl enable sslh
-    echo "✅ SSLH INSTALADO E CONFIGURADO COM SUCESSO."
-    sleep 3
-    clear
-}
-
-#FUNÇÃO REMOVER SSLH
-remove_sslh() {
-    echo "🗑️ REMOVENDO SSLH..."
-    sleep 3
-    clear
-    sudo systemctl stop sslh
-    sudo systemctl disable sslh
-    sudo apt remove --purge sslh -y
-    sudo rm -f /etc/default/sslh /var/run/sslh.pid
-    clear
-    echo "✅ SSLH REMOVIDO COM SUCESSO."
-    sleep 4
-    clear
-}
-   
 #EXIBIR MENU
 show_menu() {
     clear
@@ -213,8 +174,6 @@ show_menu() {
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
 [\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PROXY \033[1;31m
 [\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
-[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
 [\033[1;36m07\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
@@ -270,20 +229,6 @@ show_menu() {
             read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-	6)
-            clear
-            remove_sslh
-            read -p "✅ SSLH REMOVIDO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;
-      
-	7)
-          clear
-            uninstall_rustyproxy
-            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
-	    clear
-            exit 0
-            ;;	
-			
         0)
 	    clear
             exit 0
