@@ -148,24 +148,68 @@ restart_all_proxies() {
     clear
 }
 
-# Função para instalar e configurar SSLH
-install_sslh() {
-    echo "INSTALANDO SSLH..."
-    sudo apt update
-    sudo apt install sslh -y
-    
-    echo "CONFIGURANDO SSLH..."
-    sudo bash -c 'cat > /etc/default/sslh <<EOF
-DAEMON_OPTS="--user sslh --listen 0.0.0.0:443 --ssh 127.0.0.1:22 --openvpn 127.0.0.1:1194 --pidfile /var/run/sslh.pid -n"
-EOF'
-    
-    sudo systemctl restart sslh
-    sudo systemctl enable sslh
-    echo "✅ SSLH INSTALADO E CONFIGURADO COM SUCESSO."
-    sleep 3
-    clear
-}
-
+# FUNÇÃO SSLH
+fun_sslh() {
+		[[ "$(netstat -nltp | grep 'sslh' | wc -l)" = '0' ]] && {
+			clear
+			echo -e "\E[44;1;37m             INSTALADOR SSLH               \E[0m\n"
+			echo -e "\n\033[1;33mVC ESTA PRESTES A INSTALAR SSLH !\033[0m\n"
+			echo -ne "\033[1;32mDESEJA CONTINUAR \033[1;31m? \033[1;33m[s/n]:\033[1;37m "
+			read resposta
+			[[ "$resposta" = 's' ]] && {
+				echo -e "\n\033[1;33mDEFINA UMA PORTA PARA SSLH !\033[0m\n"
+				echo -ne "\033[1;32mQUAL A PORTA \033[1;33m?\033[1;37m "
+				read porta
+				[[ -z "$porta" ]] && {
+					echo -e "\n\033[1;31mPorta invalida!"
+					sleep 3
+					clear
+					fun_conexao
+				}
+				verif_ptrs $porta
+				echo -e "\n\033[1;32mINSTALANDO SSLH AGUARDE...\033[0m"
+				echo ""
+				fun_instsslh() {
+					[[ -e "/etc/stunnel/stunnel.conf" ]] && ptssl="$(netstat -nplt | grep 'stunnel' | awk {'print $4'} | cut -d: -f2 | xargs)" || ptssl='3128'
+					[[ -e "/etc/openvpn/server.conf" ]] && ptvpn="$(netstat -nplt | grep 'openvpn' | awk {'print $4'} | cut -d: -f2 | xargs)" || ptvpn='1194'
+					DEBIAN_FRONTEND=noninteractive apt-get -y install sslh
+					echo -e "#Modo autónomo\n\nRUN=yes\n\nDAEMON=/usr/sbin/sslh\n\nDAEMON_OPTS='--user sslh --listen 0.0.0.0:$porta --ssh 127.0.0.1:22 --ssl 127.0.0.1:$ptssl --http 127.0.0.1:80 --openvpn 127.0.0.1:$ptvpn --pidfile /var/run/sslh/sslh.pid'" >/etc/default/sslh
+					/etc/init.d/sslh start && service sslh start
+				}
+				echo ""
+				fun_bar 'fun_instsslh'
+				echo -e "\n\033[1;32mINICIANDO O SSLH !\033[0m\n"
+				fun_bar '/etc/init.d/sslh restart && service sslh restart'
+				[[ $(netstat -nplt | grep -w 'sslh' | wc -l) != '0' ]] && echo -e "\n\033[1;32mINSTALADO COM SUCESSO !\033[0m" || echo -e "\n\033[1;31mERRO INESPERADO !\033[0m"
+				sleep 3
+				fun_conexao
+			} || {
+				echo -e "\n\033[1;31mRetornando..."
+				sleep 2
+				fun_conexao
+			}
+		} || {
+			clear
+			echo -e "\E[44;1;37m             REMOVER O SSLH               \E[0m\n"
+			echo -ne "\033[1;32mREALMENTE DESEJA REMOVER O SSLH \033[1;31m? \033[1;33m[s/n]:\033[1;37m "
+			read respo
+			[[ "$respo" = "s" ]] && {
+				fun_delsslh() {
+					/etc/init.d/sslh stop && service sslh stop
+					apt-get remove sslh -y
+					apt-get purge sslh -y
+				}
+				echo -e "\n\033[1;32mREMOVENDO O SSLH !\033[0m\n"
+				fun_bar 'fun_delsslh'
+				echo -e "\n\033[1;32mREMOVIDO COM SUCESSO !\033[0m\n"
+				sleep 2
+				fun_conexao
+			} || {
+				echo -e "\n\033[1;31mRetornando..."
+				sleep 2
+				fun_conexao
+			}
+   
 #EXIBIR MENU
 show_menu() {
     clear
