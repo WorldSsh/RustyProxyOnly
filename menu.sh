@@ -158,7 +158,7 @@ install_sslh() {
     sudo apt install sslh -y
     clear
     echo "⚒️ CONFIGURANDO SSLH..."
-    sleep 3
+    sleep 2
     clear
     read -p "DIGITE A PORTA SSLH (PADRÃO 443 OU 591): " SSLH_PORT
     SSLH_PORT=${SSLH_PORT:-443}
@@ -177,14 +177,15 @@ EOF"
 # Função para remover SSLH
 remove_sslh() {
     echo "🗑️ REMOVENDO SSLH..."
-    sleep 2
+    sleep 3
     clear
     sudo systemctl stop sslh
     sudo systemctl disable sslh
     sudo apt remove --purge sslh -y
     sudo rm -f /etc/default/sslh /var/run/sslh.pid
+    clear
     echo "✅ SSLH REMOVIDO COM SUCESSO."
-    sleep 3
+    sleep 4
     clear
 }
    
@@ -247,6 +248,7 @@ show_menu() {
 	3)
             clear
             restart_all_proxies
+	    clear
             read -p "✅ PROXYS REINICIADOS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
