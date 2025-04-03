@@ -152,11 +152,13 @@ restart_all_proxies() {
 
 #INSTALAR SSLH
 install_sslh() {
-    echo "INSTALANDO SSLH..."
+    echo "⚙️ INSTALANDO SSLH, AGUARDE..."
+    sleep 2
     sudo apt update
     sudo apt install sslh -y
     clear
-    echo "CONFIGURANDO SSLH..."
+    echo "⚒️ CONFIGURANDO SSLH..."
+    sleep 2
     clear
     read -p "DIGITE A PORTA SSLH (PADRÃO 443 OU 591): " SSLH_PORT
     SSLH_PORT=${SSLH_PORT:-443}
