@@ -223,11 +223,13 @@ show_menu() {
             read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-        5) 
+       	5)
+          clear
+            uninstall_rustyproxy
+            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
 	    clear
-            install_sslh
-            read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;
+            exit 0
+            ;;	
 
         0)
 	    clear
