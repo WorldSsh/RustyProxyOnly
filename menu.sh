@@ -176,7 +176,7 @@ EOF"
 
 # Função para remover SSLH
 remove_sslh() {
-    echo "REMOVENDO SSLH..."
+    echo "🗑️ REMOVENDO SSLH..."
     sleep 2
     clear
     sudo systemctl stop sslh
