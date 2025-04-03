@@ -46,7 +46,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let _ = client_stream.read(&mut vec![0; 4096]).await?;
     let mut addr_proxy = "0.0.0.0:22";
     
-    let result = timeout(Duration::from_secs(8), peek_stream(&client_stream)).await;
+    let result = timeout(Duration::from_secs(15), peek_stream(&client_stream)).await;
     let data = match result {
         Ok(Ok(data)) => data,
         Ok(Err(e)) => {
@@ -84,8 +84,8 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = vec![0; 1024];
-    let max_buffer_size = 64 * 1024;
+    let mut buffer = vec![0; 8192]; // Começa com 8KB em vez de 1KB
+let max_buffer_size = 128 * 1024; // Pode aumentar até 128KB
 
     loop {
         let bytes_read = {
