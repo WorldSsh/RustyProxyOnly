@@ -174,7 +174,7 @@ EOF"
     clear
 }
 
-# Função para remover SSLH
+#FUNÇÃO REMOVER SSLH
 remove_sslh() {
     echo "🗑️ REMOVENDO SSLH..."
     sleep 3
