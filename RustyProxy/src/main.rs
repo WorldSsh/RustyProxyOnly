@@ -37,7 +37,7 @@ async fn start_http(listener: TcpListener) {
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
     client_stream
-        .write_all(format!("HTTP/1.1 101 Switching Protocols\r\n\r\n {}\r\n\r\n", status).as_bytes())
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
     let mut buffer = vec![0; 4096];
