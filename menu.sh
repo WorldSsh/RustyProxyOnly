@@ -233,6 +233,7 @@ show_menu() {
             read -p "✅ PROXY ATIVADO COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
         2)
+	    clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
