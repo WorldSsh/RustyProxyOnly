@@ -2,7 +2,7 @@ use std::env;
 use std::io::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::time::{timeout, Duration};
+use tokio::time::{timeout, Duration, sleep};
 use chrono::Local;
 
 #[tokio::main]
@@ -50,6 +50,18 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
             return Ok(());
         }
     };
+    
+    // Inicia a tarefa de keep-alive
+    let mut keep_alive_stream = client_stream.clone();
+    tokio::spawn(async move {
+        loop {
+            sleep(Duration::from_secs(30)).await;
+            if let Err(e) = keep_alive_stream.write_all(b"\r\n").await {
+                log("ERROR", &format!("Erro ao enviar keep-alive: {}", e));
+                break;
+            }
+        }
+    });
     
     tokio::io::copy_bidirectional(&mut client_stream, &mut server_stream).await?;
     Ok(())
