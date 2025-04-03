@@ -42,7 +42,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let addr_proxy = identify_protocol(&mut client_stream).await;
     log("INFO", &format!("Conectando ao proxy: {}", addr_proxy));
     
-    let server_connect = timeout(Duration::from_secs(5), TcpStream::connect(&addr_proxy)).await;
+    let server_connect = timeout(Duration::from_secs(10), TcpStream::connect(&addr_proxy)).await;
     let server_stream = match server_connect {
         Ok(Ok(stream)) => stream,
         Ok(Err(e)) | Err(e) => {
