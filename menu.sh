@@ -158,7 +158,7 @@ install_sslh() {
     sudo apt install sslh -y
     clear
     echo "⚒️ CONFIGURANDO SSLH..."
-    sleep 2
+    sleep 3
     clear
     read -p "DIGITE A PORTA SSLH (PADRÃO 443 OU 591): " SSLH_PORT
     SSLH_PORT=${SSLH_PORT:-443}
@@ -208,7 +208,7 @@ show_menu() {
     fi
 
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROX \033[1;31m
+    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
 [\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
 [\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PROXY \033[1;31m
 [\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
