@@ -9,7 +9,7 @@ add_proxy_port() {
     local status=${2:-"\033[1;31m@RustyProxy\033[0m"}
 
     if is_port_in_use $port; then
-        echo "A PORTA $port JÁ ESTÁ EM USO."
+        echo "⛔️ A PORTA $port JÁ ESTÁ EM USO."
         return
     fi
 
@@ -35,7 +35,7 @@ WantedBy=multi-user.target"
 
     #SALVAR PORTAS NO ARQUIVO COM CÓDIGO ANSI
     echo -e "$port \033[1;32m$status\033[0m" >> "$PORTS_FILE"
-    echo "Porta $port ABERTA COM SUCESSO."
+    echo "✅ PORTA $port ABERTA COM SUCESSO."
     clear
 }
 
@@ -70,7 +70,7 @@ del_proxy_port() {
 
     #REMOVER A PORTA DO ARQUIVO DE CONTROLE
     sed -i "/^$port /d" "$PORTS_FILE"
-    echo "Porta $port FECHADA COM SUCESSO."
+    echo "✅ PORTA $port FECHADA COM SUCESSO."
     clear
 }
 
@@ -81,7 +81,7 @@ update_proxy_status() {
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
     if ! is_port_in_use $port; then
-        echo "A PORTA $port NÃO ESTÁ ATIVA."
+        echo "⚠️ A PORTA $port NÃO ESTÁ ATIVA."
         return
     fi
 
@@ -99,14 +99,14 @@ update_proxy_status() {
     #ATUALIZAR O ARQUIVO DE PORTAS COM CÓDIGO ANSI
     sed -i "s/^$port .*/$port \033[1;32m$status\033[0m" "$PORTS_FILE"
 
-    echo "STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
+    echo "🔃 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
     sleep 3
     clear
 }
 
 #FUNÇÃO PARA DESINSTALAR RUSTY PROXY
     uninstall_rustyproxy() {
-    echo "DESINSTALANDO RUSTY PROXY, AGUARDE..."
+    echo "🗑️ DESINSTALANDO RUSTY PROXY, AGUARDE..."
     sleep 3
     clear
 
@@ -135,7 +135,9 @@ restart_all_proxies() {
         return
     fi
 
-    echo "REINICIANDO TODAS AS PORTAS DO PROXY..."
+    echo "🔃 REINICIANDO TODAS AS PORTAS DO PROXY..."
+    sleep 2
+    clear
     while read -r line; do
         port=$(echo "$line" | awk '{print $1}')
         status=$(echo "$line" | cut -d' ' -f2-)
@@ -174,6 +176,8 @@ EOF"
 # Função para remover SSLH
 remove_sslh() {
     echo "REMOVENDO SSLH..."
+    sleep 2
+    clear
     sudo systemctl stop sslh
     sudo systemctl disable sslh
     sudo apt remove --purge sslh -y
@@ -203,13 +207,12 @@ show_menu() {
     fi
 
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mABRIR PORTAS \033[1;31m
-[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
-[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
-[\033[1;36m07\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
+    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROX \033[1;31m
+[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
+[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
+[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mATIVAR SSLH \033[1;31m
+[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SSLH \033[1;31m
+[\033[1;36m06\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
 [\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
     echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
     echo
@@ -245,7 +248,7 @@ show_menu() {
             read -p "✅ PROXYS REINICIADOS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;	
 			
-        4)
+        3)
             clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
@@ -257,17 +260,17 @@ show_menu() {
             read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-        5)
+        4)
             install_sslh
             read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-	6)
+	5)
             remove_sslh
             read -p "✅ SSLH REMOVIDO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
       
-	7)
+	6)
           clear
             uninstall_rustyproxy
             read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
