@@ -260,7 +260,7 @@ show_menu() {
             read -p "✅ SSLH CONFIGURADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
 
-	7)
+	6)
             remove_sslh
             read -p "✅ SSLH REMOVIDO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
             ;;
