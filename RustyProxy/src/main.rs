@@ -33,13 +33,15 @@ async fn start_http(listener: TcpListener) {
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
     client_stream
-    .write_all(format!(
-        "HTTP/1.1 200 Connection Established\r\n\
-         Proxy-Agent: RustProxy ({})\r\n\
-         Connection: keep-alive\r\n\
-         Keep-Alive: timeout=300, max=120\r\n\r\n",
-        get_status()
-    ).as_bytes()).await?;
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
+        .await?;
+
+    client_stream
+        .write_all(b"HTTP/1.1 200 Connection Established\r\n\
+                     Proxy-Agent: RustProxy\r\n\
+                     Connection: keep-alive\r\n\
+                     Keep-Alive: timeout=300, max=120\r\n\r\n")
+        .await?;
 
     let _ = client_stream.read(&mut vec![0; 4096]).await?;
     let mut addr_proxy = "0.0.0.0:22";
