@@ -11,22 +11,50 @@ async fn main() -> Result<(), Error> {
     let port = get_port();
     let listener = TcpListener::bind(format!("[::]:{}", port)).await?;
     println!("Iniciando serviço na porta: {}", port);
-    start_proxy(listener).await;
+    start_http(listener).await;
     Ok(())
 }
 
-async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
-    let mut addr_proxy = "0.0.0.0:22";
+async fn start_http(listener: TcpListener) {
+    loop {
+        match listener.accept().await {
+            Ok((client_stream, addr)) => {
+                tokio::spawn(async move {
+                    if let Err(e) = handle_client(client_stream).await {
+                        println!("Erro ao processar cliente {}: {}", addr, e);
+                    }
+                });
+            }
+            Err(e) => println!("Erro ao aceitar conexão: {}", e),
+        }
+    }
+}
 
+async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
+    let status = get_status();
+    client_stream
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
+        .await?;
+
+    client_stream
+        .write_all(b"HTTP/1.1 200 Connection Established\r\n\
+                     Proxy-Agent: RustProxy\r\n\
+                     Connection: keep-alive\r\n\
+                     Keep-Alive: timeout=300, max=120\r\n\r\n")
+        .await?;
+
+    let _ = client_stream.read(&mut vec![0; 4096]).await?;
+    let mut addr_proxy = "0.0.0.0:22";
+    
     let result = timeout(Duration::from_secs(15), peek_stream(&client_stream)).await;
     let data = match result {
         Ok(Ok(data)) => data,
         Ok(Err(e)) => {
-            eprintln!("Erro ao espiar stream: {}", e);
+            println!("Erro ao espiar stream: {}", e);
             return Err(e);
         }
         Err(_) => {
-            eprintln!("Timeout ao espiar stream.");
+            println!("Timeout ao espiar stream.");
             String::new()
         }
     };
@@ -50,7 +78,6 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     )?;
 
     Ok(())
-
 }
 
 async fn transfer_data(
@@ -93,23 +120,14 @@ async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
 fn get_port() -> u16 {
     env::args()
         .skip_while(|arg| arg != "--port")
-        .skip(1)
-        .next()
+        .nth(1)
         .and_then(|p| p.parse().ok())
         .unwrap_or(80)
 }
 
-async fn start_proxy(listener: TcpListener) {
-    loop {
-        match listener.accept().await {
-            Ok((client_stream, addr)) => {
-                tokio::spawn(async move {
-                    if let Err(e) = handle_client(client_stream).await {
-                        eprintln!("Erro ao processar cliente {}: {}", addr, e);
-                    }
-                });
-            }
-            Err(e) => eprintln!("Erro ao aceitar conexão: {}", e),
-        }
-    }
+fn get_status() -> String {
+    env::args()
+        .skip_while(|arg| arg != "--status")
+        .nth(1)
+        .unwrap_or_else(|| "@RustyManager".to_string())
 }
