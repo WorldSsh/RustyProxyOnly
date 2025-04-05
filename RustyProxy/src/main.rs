@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
-use tokio::time::{timeout, Duration};
+use tokio::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -33,32 +33,17 @@ async fn start_http(listener: TcpListener) {
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
     let response = format!(
-        "HTTP/1.1 200 Connection Established\r\n         Proxy-Agent: RustProxy\r\n         Connection: keep-alive\r\n         Keep-Alive: timeout=500, max=1200\r\n         X-Status: {}\r\n\r\n",
+        "HTTP/1.1 200 Connection Established\r\n\
+         Proxy-Agent: RustProxy\r\n\
+         Connection: keep-alive\r\n\
+         Keep-Alive: timeout=500, max=1200\r\n\
+         X-Status: {}\r\n\r\n",
         status
     );
     client_stream.write_all(response.as_bytes()).await?;
 
-    let _ = client_stream.read(&mut vec![0; 4096]).await?;
-    let mut addr_proxy = "0.0.0.0:22";
-
-    let result = timeout(Duration::from_secs(15), peek_stream(&client_stream)).await;
-    let data = match result {
-        Ok(Ok(data)) => data,
-        Ok(Err(e)) => {
-            eprintln!("Erro ao espiar stream: {}", e);
-            return Err(e);
-        }
-        Err(_) => {
-            eprintln!("Timeout ao espiar stream.");
-            String::new()
-        }
-    };
-
-    if !(data.contains("SSH") || data.is_empty()) {
-        addr_proxy = "0.0.0.0:1194";
-    }
-
-    let server_stream = TcpStream::connect(addr_proxy).await?;
+    // Conecta diretamente ao destino fixo (por exemplo, SSH na porta 22)
+    let server_stream = TcpStream::connect("0.0.0.0:22").await?;
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
 
@@ -118,15 +103,6 @@ async fn transfer_data(
     }
 
     Ok(())
-}
-
-async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut peek_buffer = vec![0; 4096];
-    let bytes_peeked = stream.peek(&mut peek_buffer).await?;
-    let data = String::from_utf8_lossy(&peek_buffer[..bytes_peeked]).to_string();
-
-    println!("Peeked Data: {}", data);
-    Ok(data)
 }
 
 fn get_port() -> u16 {
