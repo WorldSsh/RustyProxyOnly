@@ -21,35 +21,40 @@ async fn start_http(listener: TcpListener) {
             Ok((client_stream, addr)) => {
                 tokio::spawn(async move {
                     if let Err(e) = handle_client(client_stream).await {
-                        eprintln!("Erro ao processar cliente {}: {}", addr, e);
+                        println!("Erro ao processar cliente {}: {}", addr, e);
                     }
                 });
             }
-            Err(e) => eprintln!("Erro ao aceitar conexão: {}", e),
+            Err(e) => println!("Erro ao aceitar conexão: {}", e),
         }
     }
 }
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
-    let response = format!(
-        "HTTP/1.1 200 Connection Established\r\n         Proxy-Agent: RustProxy\r\n         Connection: keep-alive\r\n         Keep-Alive: timeout=500, max=1200\r\n         X-Status: {}\r\n\r\n",
-        status
-    );
-    client_stream.write_all(response.as_bytes()).await?;
+    client_stream
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
+        .await?;
+
+    client_stream
+        .write_all(b"HTTP/1.1 200 Connection Established\r\n\
+                     Proxy-Agent: RustProxy\r\n\
+                     Connection: keep-alive\r\n\
+                     Keep-Alive: timeout=300, max=120\r\n\r\n")
+        .await?;
 
     let _ = client_stream.read(&mut vec![0; 4096]).await?;
     let mut addr_proxy = "0.0.0.0:22";
-
+    
     let result = timeout(Duration::from_secs(15), peek_stream(&client_stream)).await;
     let data = match result {
         Ok(Ok(data)) => data,
         Ok(Err(e)) => {
-            eprintln!("Erro ao espiar stream: {}", e);
+            println!("Erro ao espiar stream: {}", e);
             return Err(e);
         }
         Err(_) => {
-            eprintln!("Timeout ao espiar stream.");
+            println!("Timeout ao espiar stream.");
             String::new()
         }
     };
@@ -67,34 +72,20 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let server_read = Arc::new(Mutex::new(server_read));
     let server_write = Arc::new(Mutex::new(server_write));
 
-    let heartbeat = spawn_keep_alive(server_write.clone());
-
-    let result = tokio::try_join!(
+    tokio::try_join!(
         transfer_data(client_read, server_write),
         transfer_data(server_read, client_write)
-    );
-
-    heartbeat.abort(); // Cancela a tarefa de keep-alive
-    result?;
+    )?;
 
     Ok(())
-}
-
-fn spawn_keep_alive(stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>) -> tokio::task::JoinHandle<()> {
-    tokio::spawn(async move {
-        loop {
-            tokio::time::sleep(Duration::from_secs(30)).await;
-            let _ = stream.lock().await.write_all(b"\n").await;
-        }
-    })
 }
 
 async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = vec![0; 4096];
-    let max_buffer_size = 128 * 1024;
+    let mut buffer = vec![0; 8192]; // Começa com 8KB em vez de 1KB
+let max_buffer_size = 128 * 1024; // Pode aumentar até 128KB
 
     loop {
         let bytes_read = {
@@ -103,14 +94,11 @@ async fn transfer_data(
         };
 
         if bytes_read == 0 {
-            println!("Conexão encerrada pelo cliente ou servidor.");
             break;
         }
 
         if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
-            let new_size = (buffer.len() * 2).min(max_buffer_size);
-            println!("Aumentando buffer de {} para {}", buffer.len(), new_size);
-            buffer.resize(new_size, 0);
+            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
         }
 
         let mut write_guard = write_stream.lock().await;
@@ -125,7 +113,7 @@ async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
     let bytes_peeked = stream.peek(&mut peek_buffer).await?;
     let data = String::from_utf8_lossy(&peek_buffer[..bytes_peeked]).to_string();
 
-    println!("Peeked Data: {}", data);
+    println!("Peeked Data: {}", data); // <-- Adicione este log para depuração
     Ok(data)
 }
 
@@ -134,7 +122,7 @@ fn get_port() -> u16 {
         .skip_while(|arg| arg != "--port")
         .nth(1)
         .and_then(|p| p.parse().ok())
-        .unwrap_or(8080)
+        .unwrap_or(80)
 }
 
 fn get_status() -> String {
