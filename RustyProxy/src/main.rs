@@ -134,7 +134,7 @@ fn get_port() -> u16 {
         .skip_while(|arg| arg != "--port")
         .nth(1)
         .and_then(|p| p.parse().ok())
-        .unwrap_or(80)
+        .unwrap_or(8080)
 }
 
 fn get_status() -> String {
