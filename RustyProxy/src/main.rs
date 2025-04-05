@@ -40,21 +40,22 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .write_all(b"HTTP/1.1 200 Connection Established\r\n\
                      Proxy-Agent: RustProxy\r\n\
                      Connection: keep-alive\r\n\
-                     Keep-Alive: timeout=300, max=600\r\n\r\n")
+                     Keep-Alive: timeout=500, max=1200\r\n\r\n")
         .await?;
 
     let _ = client_stream.read(&mut vec![0; 4096]).await?;
     let mut addr_proxy = "0.0.0.0:22";
-    
-    let result = timeout(Duration::from_secs(15), peek_stream(&client_stream)).await;
+
+    // Aqui a espiada no stream foi modificada, já que "peek" não é suportado no TCP.
+    let result = timeout(Duration::from_secs(15), read_initial_data(&client_stream)).await;
     let data = match result {
         Ok(Ok(data)) => data,
         Ok(Err(e)) => {
-            println!("Erro ao espiar stream: {}", e);
+            println!("Erro ao ler stream: {}", e);
             return Err(e);
         }
         Err(_) => {
-            println!("Timeout ao espiar stream.");
+            println!("Timeout ao ler stream.");
             String::new()
         }
     };
@@ -69,6 +70,15 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
 
     let client_read = Arc::new(Mutex::new(client_read));
     let client_write = Arc::new(Mutex::new(client_write));
+    
+    let keep_alive_write = Arc::clone(&client_write);
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+            let _ = keep_alive_write.lock().await.write_all(b"\n").await;
+        }
+    });
+
     let server_read = Arc::new(Mutex::new(server_read));
     let server_write = Arc::new(Mutex::new(server_write));
 
@@ -88,12 +98,9 @@ async fn transfer_data(
     let max_buffer_size = 128 * 1024; // 128KB máximo
 
     loop {
-        let bytes_read = {
-            let mut read_guard = read_stream.lock().await;
-            read_guard.read(&mut buffer).await?
-        };
-
+        let bytes_read = read_stream.lock().await.read(&mut buffer).await?;
         if bytes_read == 0 {
+            println!("Conexão encerrada pelo cliente ou servidor!");
             break;
         }
 
@@ -110,12 +117,12 @@ async fn transfer_data(
     Ok(())
 }
 
-async fn peek_stream(stream: &TcpStream) -> Result<String, Error> {
-    let mut peek_buffer = vec![0; 4096];
-    let bytes_peeked = stream.peek(&mut peek_buffer).await?;
-    let data = String::from_utf8_lossy(&peek_buffer[..bytes_peeked]).to_string();
+async fn read_initial_data(stream: &TcpStream) -> Result<String, Error> {
+    let mut buffer = vec![0; 4096];
+    let bytes_read = stream.read(&mut buffer).await?;
+    let data = String::from_utf8_lossy(&buffer[..bytes_read]).to_string();
 
-    println!("Peeked Data: {}", data); // <-- Adicione este log para depuração
+    println!("Dados iniciais lidos: {}", data); // Log para depuração
     Ok(data)
 }
 
