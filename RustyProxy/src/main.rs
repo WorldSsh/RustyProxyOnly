@@ -40,7 +40,7 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .write_all(b"HTTP/1.1 200 Connection Established\r\n\
                      Proxy-Agent: RustProxy\r\n\
                      Connection: keep-alive\r\n\
-                     Keep-Alive: timeout=300, max=120\r\n\r\n")
+                     Keep-Alive: timeout=300, max=600\r\n\r\n")
         .await?;
 
     let _ = client_stream.read(&mut vec![0; 4096]).await?;
@@ -84,8 +84,8 @@ async fn transfer_data(
     read_stream: Arc<Mutex<tokio::net::tcp::OwnedReadHalf>>,
     write_stream: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) -> Result<(), Error> {
-    let mut buffer = vec![0; 8192]; // Começa com 8KB em vez de 1KB
-let max_buffer_size = 128 * 1024; // Pode aumentar até 128KB
+    let mut buffer = vec![0; 4096]; // 4KB inicial
+    let max_buffer_size = 128 * 1024; // 128KB máximo
 
     loop {
         let bytes_read = {
@@ -98,7 +98,9 @@ let max_buffer_size = 128 * 1024; // Pode aumentar até 128KB
         }
 
         if bytes_read == buffer.len() && buffer.len() < max_buffer_size {
-            buffer.resize((buffer.len() * 2).min(max_buffer_size), 0);
+            let new_size = (buffer.len() * 2).min(max_buffer_size);
+            println!("Aumentando buffer de {} para {}", buffer.len(), new_size);
+            buffer.resize(new_size, 0);
         }
 
         let mut write_guard = write_stream.lock().await;
