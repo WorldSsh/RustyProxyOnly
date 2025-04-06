@@ -148,7 +148,7 @@ show_menu() {
     clear
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
     echo -e "${WHITE_BG}                  ⚒ RUSTY PROXY MANAGER ⚒                     ${RESET}"
-    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2.                   ${RESET}"
+    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2.                         ${RESET}"
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
 
     if [ ! -s "$PORTS_FILE" ]; then
