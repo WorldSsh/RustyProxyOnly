@@ -148,7 +148,7 @@ show_menu() {
     clear
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
     echo -e "${WHITE_BG}                  ⚒ RUSTY PROXY MANAGER ⚒                     ${RESET}"
-    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2.                         ${RESET}"
+    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2.                           ${RESET}"
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
 
     if [ ! -s "$PORTS_FILE" ]; then
@@ -180,6 +180,8 @@ show_menu() {
             done
             read -p "DIGITE O NOME DO STATUS: " status
             add_proxy_port "$port" "$status"
+            sleep 3
+            clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
         2)
@@ -190,11 +192,15 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             del_proxy_port "$port"
+            sleep 3
+            clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
         3)
             clear
             restart_all_proxies
+            sleep 3
+            clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
         4)
@@ -206,13 +212,16 @@ show_menu() {
             done
             read -p "DIGITE O NOVO STATUS DO PROXY: " new_status
             update_proxy_status "$port" "$new_status"
+            sleep 3
+            clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
         5)
             clear
             uninstall_rustyproxy
-            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA SAIR."
+            sleep 3
             clear
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA SAIR."
             exit 0
             ;;
         0)
