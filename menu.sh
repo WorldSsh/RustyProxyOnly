@@ -25,7 +25,7 @@ add_proxy_port() {
         return
     fi
 
-    local command="/opt/rustyproxy/proxy --port $port --status \"status\""
+    local command="/opt/rustyproxy/proxy --port $port --status \"$status\""
     local service_file_path="/etc/systemd/system/proxy${port}.service"
     local service_file_content="[Unit]
 Description=RustyProxy ${port}
@@ -45,7 +45,7 @@ WantedBy=multi-user.target"
     systemctl enable "proxy${port}.service"
     systemctl start "proxy${port}.service"
 
-    echo "$port|status" >> "$PORTS_FILE"
+    echo "$port|$status" >> "$PORTS_FILE"
     echo -e "${GREEN}✅ PORTA $port ABERTA COM SUCESSO.${RESET}"
 }
 
@@ -137,7 +137,7 @@ restart_all_proxies() {
 
     while IFS='|' read -r port status; do
         del_proxy_port "$port"
-        add_proxy_port "$port" "status"
+        add_proxy_port "$port" "$status"
     done < "$PORTS_FILE"
 
     echo -e "${GREEN}✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO.${RESET}"
@@ -179,7 +179,7 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             read -p "DIGITE O NOME DO STATUS: " status
-            add_proxy_port "$port" "status"
+            add_proxy_port "$port" "$status"
             sleep 3
             clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
