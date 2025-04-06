@@ -18,7 +18,7 @@ fi
 
 add_proxy_port() {
     local port=$1
-    local status=${2:-"PROXY ANY"}
+    local status=${2:-"RUSTY PROXY"}
 
     if is_port_in_use "$port"; then
         echo -e "${RED}⛔️ A PORTA $port JÁ ESTÁ EM USO.${RESET}"
@@ -45,7 +45,7 @@ WantedBy=multi-user.target"
     systemctl enable "proxy${port}.service"
     systemctl start "proxy${port}.service"
 
-    echo "$port|$status" >> "$PORTS_FILE"
+    echo "$port <font color='red'>$status\</font>" >> "$PORTS_FILE"
     echo -e "${GREEN}✅ PORTA $port ABERTA COM SUCESSO.${RESET}"
 }
 
