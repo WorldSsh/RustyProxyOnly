@@ -18,8 +18,7 @@ fi
 
 add_proxy_port() {
     local port=$1
-    local clean_status=${2:-"PROXY ANY"}
-local status="${GREEN}${clean_status}${RESET}"
+    local status=${2:-"PROXY ANY"}
 
     if is_port_in_use "$port"; then
         echo -e "${RED}⛔️ A PORTA $port JÁ ESTÁ EM USO.${RESET}"
