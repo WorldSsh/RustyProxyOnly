@@ -33,6 +33,7 @@ async fn start_proxy(listener: TcpListener) {
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
+    client_stream.set_keepalive(Some(Duration::from_secs(60)))?;
     client_stream
         .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
@@ -50,12 +51,15 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     };
 
     let server_stream = match TcpStream::connect(addr_proxy).await {
-        Ok(stream) => stream,
-        Err(_) => {
-            eprintln!("Erro ao conectar-se ao servidor proxy em {}", addr_proxy);
-            return Ok(());
-        }
-    };
+    Ok(stream) => {
+        stream.set_keepalive(Some(Duration::from_secs(60)))?;
+        stream
+    }
+    Err(_) => {
+        eprintln!("Erro ao conectar-se ao servidor proxy em {}", addr_proxy);
+        return Ok(());
+    }
+};
 
     let (client_read, client_write) = client_stream.into_split();
     let (server_read, server_write) = server_stream.into_split();
