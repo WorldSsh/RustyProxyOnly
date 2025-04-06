@@ -107,5 +107,5 @@ fn get_port() -> u16 {
 }
 
 fn get_status() -> String {
-    env::args().nth(4).unwrap_or_else(|| "@RustyManager".to_string())
+    env::args().nth(4).unwrap_or_else(|| "@RUSTY PROXY".to_string())
 }
