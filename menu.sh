@@ -3,7 +3,6 @@
 
 PORTS_FILE="/opt/rustyproxy/ports"
 
-# Cores ANSI
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
@@ -45,7 +44,7 @@ WantedBy=multi-user.target"
     systemctl enable "proxy${port}.service"
     systemctl start "proxy${port}.service"
 
-    echo "$port <font color='red'>$status\</font>" >> "$PORTS_FILE"
+    echo "$port|$status" >> "$PORTS_FILE"
     echo -e "${GREEN}✅ PORTA $port ABERTA COM SUCESSO.${RESET}"
 }
 
@@ -236,10 +235,8 @@ show_menu() {
     esac
 }
 
-# Verifica ou cria o arquivo de controle de portas
 [ ! -f "$PORTS_FILE" ] && touch "$PORTS_FILE"
 
-# Loop do menu
 while true; do
     show_menu
 done
