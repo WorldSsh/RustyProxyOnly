@@ -38,15 +38,10 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .await?;
 
     let mut buffer = [0; 1024];
+    client_stream.read(&mut buffer).await?;
     client_stream
-    .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
-    .await?;
-
-// ...
-
-client_stream
-    .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
-    .await?;
+        .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
+        .await?;
 
     let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
