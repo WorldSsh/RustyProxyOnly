@@ -222,6 +222,7 @@ show_menu() {
             sleep 3
             clear
             read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA SAIR."
+            clear
             exit 0
             ;;
         0)
