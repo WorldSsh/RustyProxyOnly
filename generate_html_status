@@ -1,0 +1,10 @@
+generate_html_status() {
+    local html_file="/opt/rustyproxy/status.html"
+
+    echo "<html><head><meta charset='UTF-8'><title>Status das Portas</title></head><body style='font-family: monospace;'>" > "$html_file"
+    echo "<h2>Status das Portas - RustyProxy</h2><ul>" >> "$html_file"
+    while IFS='|' read -r port status; do
+        echo "<li><b>Porta:</b> $port - <span style='color: red;'>$status</span></li>" >> "$html_file"
+    done < "$PORTS_FILE"
+    echo "</ul></body></html>" >> "$html_file"
+}
