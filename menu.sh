@@ -154,9 +154,8 @@ show_menu() {
     if [ ! -s "$PORTS_FILE" ]; then
         echo "NENHUMA PORTA ON"
     else
-        while read -r port; do
-    echo -e " PORTA: ${YELLOW}$port${RESET} ON"
-done < "$PORTS_FILE"
+        while IFS='|' read -r port status; do
+            echo -e " PORTA: ${YELLOW}$port${RESET} ON ${GREEN}$status${RESET}"
         done < "$PORTS_FILE"
     fi
 
