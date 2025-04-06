@@ -1,15 +1,27 @@
 #!/bin/bash
-#MENU RUSTYPROXY
+# RUSTYPROXY MANAGER
 
 PORTS_FILE="/opt/rustyproxy/ports"
 
-#FUNÇÃO PARA ABRIR PORTAS DE UM PROXY
+# Cores ANSI
+RED="\033[1;31m"
+GREEN="\033[1;32m"
+YELLOW="\033[1;33m"
+BLUE="\033[0;34m"
+WHITE_BG="\033[40;1;37m"
+RESET="\033[0m"
+
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${RED}Por favor, execute este script como root ou com sudo.${RESET}"
+  exit 1
+fi
+
 add_proxy_port() {
     local port=$1
-    local status=${2:-"<font color='red'>@RustyProxy</font>"}
+    local status=${2:-"PROXY ANY"}
 
-    if is_port_in_use $port; then
-        echo "⛔️ A PORTA $port JÁ ESTÁ EM USO."
+    if is_port_in_use "$port"; then
+        echo -e "${RED}⛔️ A PORTA $port JÁ ESTÁ EM USO.${RESET}"
         return
     fi
 
@@ -28,22 +40,17 @@ Restart=always
 [Install]
 WantedBy=multi-user.target"
 
-    echo "$service_file_content" | sudo tee "$service_file_path" > /dev/null
-    sudo systemctl daemon-reload
-    sudo systemctl enable "proxy${port}.service"
-    sudo systemctl start "proxy${port}.service"
+    echo "$service_file_content" > "$service_file_path"
+    systemctl daemon-reload
+    systemctl enable "proxy${port}.service"
+    systemctl start "proxy${port}.service"
 
-    #SALVAR PORTAS NO ARQUIVO COM CÓDIGO ANSI
-    echo -e "$port <font color='red'>$status</font>" >> "$PORTS_FILE"
-    echo "✅ PORTA $port ABERTA COM SUCESSO."
-    clear
+    echo "$port|$status" >> "$PORTS_FILE"
+    echo -e "${GREEN}✅ PORTA $port ABERTA COM SUCESSO.${RESET}"
 }
 
-#FUNÇÃO VERIFICAR PORTAS EM USO
 is_port_in_use() {
     local port=$1
-
-    #VERIFICA CONEXÕES ESTABELECIDAS OU LISTEN
     if netstat -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
         return 0
     elif ss -tuln 2>/dev/null | awk '{print $4}' | grep -q ":$port$"; then
@@ -53,82 +60,72 @@ is_port_in_use() {
     else
         return 1
     fi
-
 }
 
-#FUNÇÃO PARA FECHAR PORTAS DE UM PROXY
 del_proxy_port() {
     local port=$1
 
-    sudo systemctl disable "proxy${port}.service"
-    sudo systemctl stop "proxy${port}.service"
-    sudo rm -f "/etc/systemd/system/proxy${port}.service"
-    sudo systemctl daemon-reload
+    systemctl disable "proxy${port}.service"
+    systemctl stop "proxy${port}.service"
+    rm -f "/etc/systemd/system/proxy${port}.service"
+    systemctl daemon-reload
 
-    #MATAR QUALQUER PROCESSO QUE AINDA ESTEJA USANDO A PORTA
-    fuser -k "$port"/tcp 2>/dev/null
+    if lsof -i :"$port" &>/dev/null; then
+        fuser -k "$port"/tcp 2>/dev/null
+    fi
 
-    #REMOVER A PORTA DO ARQUIVO DE CONTROLE
-    sed -i "/^$port /d" "$PORTS_FILE"
-    echo "✅ PORTA $port FECHADA COM SUCESSO."
-    clear
+    sed -i "/^$port|/d" "$PORTS_FILE"
+    echo -e "${GREEN}✅ PORTA $port FECHADA COM SUCESSO.${RESET}"
 }
 
-#FUNÇÃO PARA ALTERAR UM STATUS DE UM PROXY
 update_proxy_status() {
     local port=$1
     local new_status=$2
     local service_file_path="/etc/systemd/system/proxy${port}.service"
 
-    if ! is_port_in_use $port; then
-        echo "⚠️ A PORTA $port NÃO ESTÁ ATIVA."
+    if ! is_port_in_use "$port"; then
+        echo -e "${YELLOW}⚠️ A PORTA $port NÃO ESTÁ ATIVA.${RESET}"
         return
     fi
 
     if [ ! -f "$service_file_path" ]; then
-        echo "ARQUIVO DE SERVIÇO PARA $port NÃO ENCONTRADO."
+        echo -e "${RED}ARQUIVO DE SERVIÇO PARA $port NÃO ENCONTRADO.${RESET}"
         return
     fi
 
     local new_command="/opt/rustyproxy/proxy --port $port --status \"$new_status\""
-    sudo sed -i "s|^ExecStart=.*$|ExecStart=${new_command}|" "$service_file_path"
+    sed -i "s|^ExecStart=.*$|ExecStart=${new_command}|" "$service_file_path"
 
-    sudo systemctl daemon-reload
-    sudo systemctl restart "proxy${port}.service"
+    systemctl daemon-reload
+    systemctl restart "proxy${port}.service"
 
-    #ATUALIZAR O ARQUIVO DE PORTAS COM CÓDIGO ANSI
-    sed -i "s/^$port .*/$port <font color='green'>$status</font>" "$PORTS_FILE"
+    sed -i "s/^$port|.*/$port|$new_status/" "$PORTS_FILE"
 
-    echo "🔃 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'."
-    sleep 3
-    clear
+    echo -e "${YELLOW}🔃 STATUS DA PORTA $port ATUALIZADO PARA '$new_status'.${RESET}"
+    sleep 2
 }
 
-#FUNÇÃO PARA DESINSTALAR RUSTY PROXY
-    uninstall_rustyproxy() {
-    echo "🗑️ DESINSTALANDO RUSTY PROXY, AGUARDE..."
-    sleep 3
+uninstall_rustyproxy() {
+    echo -e "${YELLOW}🗑️ DESINSTALANDO RUSTY PROXY, AGUARDE...${RESET}"
+    sleep 2
     clear
 
-#REMOVER TODOS OS SERVIÇOS
     if [ -s "$PORTS_FILE" ]; then
-        while read -r port; do
-            del_proxy_port $port
+        while IFS='|' read -r port _; do
+            del_proxy_port "$port"
         done < "$PORTS_FILE"
     fi
-	
-	#REMOVER BINÁRIOS, ARQUIVOS E DIRETÓRIOS
-    sudo rm -rf /opt/rustyproxy
-    sudo rm -f "$PORTS_FILE"
 
-    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
-    echo -e "\033[40;1;37m           RUSTY PROXY DESINSTALADO COM SUCESSO.          \E[0m"
-    echo -e "\033[0;34m---------------------------------------------------------\033[0m"
-    sleep 4
+    rm -rf /opt/rustyproxy
+    rm -f "$PORTS_FILE"
+
+    echo -e "${BLUE}---------------------------------------------------------${RESET}"
+    echo -e "${WHITE_BG}           RUSTY PROXY DESINSTALADO COM SUCESSO.          ${RESET}"
+    echo -e "${BLUE}---------------------------------------------------------${RESET}"
+    sleep 3
     clear
 }
 
-#FUNÇÃO PARA REINICIAR TODAS AS PORTAS PROXYS ABERTAS
 restart_all_proxies() {
     if [ ! -s "$PORTS_FILE" ]; then
         echo "NENHUMA PORTA ENCONTRADA PARA REINICIAR."
@@ -137,47 +134,40 @@ restart_all_proxies() {
 
     echo "🔃 REINICIANDO TODAS AS PORTAS DO PROXY..."
     sleep 2
-    clear
-    while read -r line; do
-        port=$(echo "$line" | awk '{print $1}')
-        status=$(echo "$line" | cut -d' ' -f2-)
+
+    while IFS='|' read -r port status; do
         del_proxy_port "$port"
         add_proxy_port "$port" "$status"
     done < "$PORTS_FILE"
 
-    echo "✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO."
-    sleep 3
-    clear
+    echo -e "${GREEN}✅ TODAS AS PORTAS FORAM REINICIADAS COM SUCESSO.${RESET}"
+    sleep 2
 }
 
-#EXIBIR MENU
 show_menu() {
     clear
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[40;1;37m                  ⚒ RUSTY PROXY MANAGER ⚒                     \E[0m"
-    echo -e "\033[40;1;37m                        \033[1;32mVERSÃO: 0.2                           "
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
+    echo -e "${BLUE}--------------------------------------------------------------${RESET}"
+    echo -e "${WHITE_BG}                  ⚒ RUSTY PROXY MANAGER ⚒                     ${RESET}"
+    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2${RESET}"
+    echo -e "${BLUE}--------------------------------------------------------------${RESET}"
 
-   #VERIFICADOR DE PORTAS ATIVAS
     if [ ! -s "$PORTS_FILE" ]; then
-        printf "NENHUMA PORTA %-34s\n" "ON"
+        echo "NENHUMA PORTA ON"
     else
-        while read -r line; do
-            port=$(echo "$line" | awk '{print $1}')
-            status=$(echo "$line" | cut -d' ' -f2-)
-            printf " PORTA: %-5sON \033[1;31m%s\033[0m\n" "$port"
+        while IFS='|' read -r port status; do
+            echo -e " PORTA: ${YELLOW}$port${RESET} ON ${GREEN}$status${RESET}"
         done < "$PORTS_FILE"
     fi
 
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo -e "\033[1;31m[\033[1;36m01\033[1;31m] \033[1;34m◉ \033[1;33mATIVA PROXY \033[1;31m
-[\033[1;36m02\033[1;31m] \033[1;34m◉ \033[1;33mDESATIVA PROXY \033[1;31m
-[\033[1;36m03\033[1;31m] \033[1;34m◉ \033[1;33mREINICIAR PROXY \033[1;31m
-[\033[1;36m04\033[1;31m] \033[1;34m◉ \033[1;33mALTERAR STATUS \033[1;31m
-[\033[1;36m05\033[1;31m] \033[1;34m◉ \033[1;33mREMOVER SCRIPT \033[1;31m
-[\033[1;36m00\033[1;31m] \033[1;34m◉ \033[1;33mSAIR DO MENU \033[1;31m"
-    echo -e "\033[0;34m--------------------------------------------------------------\033[0m"
-    echo
+    echo -e "${BLUE}--------------------------------------------------------------${RESET}"
+    echo -e "${RED}[${CYAN}01${RED}] ${BLUE}◉ ${YELLOW}ATIVAR PROXY${RESET}"
+    echo -e "${RED}[${CYAN}02${RED}] ${BLUE}◉ ${YELLOW}DESATIVAR PROXY${RESET}"
+    echo -e "${RED}[${CYAN}03${RED}] ${BLUE}◉ ${YELLOW}REINICIAR PROXY${RESET}"
+    echo -e "${RED}[${CYAN}04${RED}] ${BLUE}◉ ${YELLOW}ALTERAR STATUS${RESET}"
+    echo -e "${RED}[${CYAN}05${RED}] ${BLUE}◉ ${YELLOW}REMOVER SCRIPT${RESET}"
+    echo -e "${RED}[${CYAN}00${RED}] ${BLUE}◉ ${YELLOW}SAIR DO MENU${RESET}"
+    echo -e "${BLUE}--------------------------------------------------------------${RESET}"
+
     read -p "  O QUE DESEJA FAZER ?: " option
 
     case $option in
@@ -189,28 +179,24 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             read -p "DIGITE O NOME DO STATUS: " status
-            add_proxy_port $port "$status"
-            read -p "✅ PROXY ATIVADO COM SUCESSO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            add_proxy_port "$port" "$status"
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
         2)
-	    clear
+            clear
             read -p "DIGITE A PORTA: " port
             while ! [[ $port =~ ^[0-9]+$ ]]; do
                 echo "DIGITE UMA PORTA VÁLIDA."
                 read -p "DIGITE A PORTA: " port
             done
-            del_proxy_port $port
-            read -p "✅ PROXY DESATIVADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-			clear
+            del_proxy_port "$port"
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
-			
-	3)
+        3)
             clear
             restart_all_proxies
-	    clear
-            read -p "✅ PROXYS REINICIADOS. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
-            ;;	
-			
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
+            ;;
         4)
             clear
             read -p "DIGITE A PORTA: " port
@@ -219,35 +205,31 @@ show_menu() {
                 read -p "DIGITE A PORTA: " port
             done
             read -p "DIGITE O NOVO STATUS DO PROXY: " new_status
-            update_proxy_status $port "$new_status"
-            read -p "✅ STATUS DO PROXY ATUALIZADO. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU." dummy
+            update_proxy_status "$port" "$new_status"
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
             ;;
-
-       	5)
-          clear
+        5)
+            clear
             uninstall_rustyproxy
-            read -p "◉ PRESSIONE QUALQUER TC PARA SAIR." dummy
-	    clear
+            read -n 1 -s -r -p "PRESSIONE QUALQUER TECLA PARA SAIR."
+            clear
             exit 0
-            ;;	
-
+            ;;
         0)
-	    clear
+            clear
             exit 0
             ;;
         *)
             echo "OPÇÃO INVÁLIDA. PRESSIONE QUALQUER TECLA PARA VOLTAR AO MENU."
-            read -n 1 dummy
+            read -n 1 -s -r
             ;;
     esac
 }
 
-#VERIFICAR SE O ARQUIVO DE PORTAS EXISTE, CASO CONTRÁRIO, CRIAR
-if [ ! -f "$PORTS_FILE" ]; then
-    sudo touch "$PORTS_FILE"
-fi
+# Verifica ou cria o arquivo de controle de portas
+[ ! -f "$PORTS_FILE" ] && touch "$PORTS_FILE"
 
-#LOOP DO MENU
+# Loop do menu
 while true; do
     show_menu
 done
