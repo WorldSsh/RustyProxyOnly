@@ -148,14 +148,15 @@ show_menu() {
     clear
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
     echo -e "${WHITE_BG}                  ⚒ RUSTY PROXY MANAGER ⚒                     ${RESET}"
-    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2${RESET}                 "
+    echo -e "${WHITE_BG}                        ${GREEN}VERSÃO: 0.2.             ${RESET}"
     echo -e "${BLUE}--------------------------------------------------------------${RESET}"
 
     if [ ! -s "$PORTS_FILE" ]; then
         echo "NENHUMA PORTA ON"
     else
-        while IFS='|' read -r port status; do
-            echo -e " PORTA: ${YELLOW}$port${RESET} ON ${GREEN}$status${RESET}"
+        while read -r port; do
+    echo -e " PORTA: ${YELLOW}$port${RESET} ON"
+done < "$PORTS_FILE"
         done < "$PORTS_FILE"
     fi
 
