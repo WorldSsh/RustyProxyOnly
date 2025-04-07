@@ -15,41 +15,31 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn start_proxy(listener: TcpListener) {
-    loop {
-        match listener.accept().await {
-            Ok((client_stream, addr)) => {
-                println!("Nova conexão de: {}", addr);
-                tokio::spawn(async move {
-                    if let Err(e) = handle_client(client_stream).await {
-                        eprintln!("Erro ao processar cliente {}: {}", addr, e);
-                    }
-                });
-            }
-            Err(e) => eprintln!("Erro ao aceitar conexão: {}", e),
-        }
-    }
-}
-
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
 
-    // Envia 100 Continue
+    // Lê o início da requisição
+    let mut buffer = [0; 1024];
+    let n = client_stream.read(&mut buffer).await?;
+    let request_str = String::from_utf8_lossy(&buffer[..n]);
+
+    // Verifica se o cliente espera um 100 Continue
+    if request_str.to_lowercase().contains("expect: 100-continue") {
     client_stream
         .write_all(format!("HTTP/1.1 100 {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    // Continua com os próximos headers
+    // Envia 101 Switching Protocols (para simular tunneling ou upgrade)
     client_stream
         .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
-    let mut buffer = [0; 1024];
-    client_stream.read(&mut buffer).await?;
+    // Envia 200 OK após o upgrade, se quiser indicar sucesso
     client_stream
         .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
         .await?;
 
+    // Decide qual proxy usar com base na detecção de protocolo
     let addr_proxy = match timeout(Duration::from_secs(1), peek_stream(&mut client_stream)).await {
         Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
@@ -116,3 +106,4 @@ fn get_port() -> u16 {
 fn get_status() -> String {
     env::args().nth(4).unwrap_or_else(|| "@RUSTY PROXY".to_string())
 }
+    
