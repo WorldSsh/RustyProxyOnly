@@ -33,12 +33,21 @@ async fn start_proxy(listener: TcpListener) {
 
 async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
     let status = get_status();
+
+    // Primeiro handshake 101
     client_stream
         .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
         .await?;
 
     let mut buffer = [0; 1024];
     client_stream.read(&mut buffer).await?;
+
+    // Segundo handshake 101
+    client_stream
+        .write_all(format!("HTTP/1.1 101 {}\r\n\r\n", status).as_bytes())
+        .await?;
+
+    // Resposta 200 opcional
     client_stream
         .write_all(format!("HTTP/1.1 200 {}\r\n\r\n", status).as_bytes())
         .await?;
