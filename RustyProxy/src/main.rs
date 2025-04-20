@@ -51,9 +51,9 @@ async fn handle_client(mut client_stream: TcpStream) -> Result<(), Error> {
         .await?;
 
     let addr_proxy = match timeout(Duration::from_secs(5), peek_stream(&mut client_stream)).await {
-        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:8008",
+        Ok(Ok(data)) if data.contains("SSH") || data.is_empty() => "0.0.0.0:22",
         Ok(_) => "0.0.0.0:1194",
-        Err(_) => "0.0.0.0:8008",
+        Err(_) => "0.0.0.0:22",
     };
 
     let mut server_stream = match TcpStream::connect(addr_proxy).await {
