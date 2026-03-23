@@ -1,0 +1,15 @@
+port = 80
+status = "@RUSTY PROXY v2.0 - jefferson"
+
+[[backends]]
+contains = "SSH"
+target = "0.0.0.0:22"
+
+[[backends]]
+contains = "OPENVPN"
+target = "0.0.0.0:1194"
+
+# Regra padrão (sempre a última)
+[[backends]]
+contains = ""
+target = "0.0.0.0:1194"
